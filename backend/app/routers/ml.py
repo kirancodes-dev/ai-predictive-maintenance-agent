@@ -10,7 +10,7 @@ from typing import Optional
 
 from app.database import get_db
 from app.models.user import User
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_admin, require_manager
 from app.services.ml_service import ml_service
 
 router = APIRouter(prefix="/ml", tags=["ml"])

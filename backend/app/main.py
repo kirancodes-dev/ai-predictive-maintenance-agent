@@ -50,10 +50,34 @@ app = FastAPI(
     title="Predictive Maintenance API",
     version="2.0.0",
     description=(
-        "Predictive Maintenance Platform — with automated failure prediction, "
-        "technician dispatch, and real-time notifications."
+        "## AI-Powered Predictive Maintenance Platform\n\n"
+        "Real-time machine health monitoring with automated failure prediction, "
+        "technician dispatch, and maintenance scheduling.\n\n"
+        "### Key Capabilities\n"
+        "- **ML Ensemble**: Isolation Forest, One-Class SVM, Random Forest, XGBoost\n"
+        "- **Real-time Streaming**: WebSocket sensor data with anomaly detection\n"
+        "- **Automation Loop**: Auto-predictions every 30s, milestone alerts, technician dispatch\n"
+        "- **Work Order Management**: Auto-generated maintenance orders from predictions\n\n"
+        "### Authentication\n"
+        "All endpoints (except `/health` and `/docs`) require a Bearer token.\n"
+        "Obtain one via `POST /api/v1/auth/login`.\n\n"
+        "Default credentials: `admin@factory.com` / `Admin@123`"
     ),
+    openapi_tags=[
+        {"name": "auth", "description": "Authentication — login, token, user profile"},
+        {"name": "machines", "description": "Machine CRUD — register, update, list factory machines"},
+        {"name": "alerts", "description": "Alert management — view, acknowledge, resolve alerts"},
+        {"name": "predictions", "description": "Failure predictions — AI-generated risk forecasts"},
+        {"name": "maintenance", "description": "Work orders — schedule, assign, complete maintenance jobs"},
+        {"name": "technicians", "description": "Technician management — availability, skills, shifts"},
+        {"name": "ml", "description": "ML model — train, predict, check model status"},
+        {"name": "data", "description": "Data ingestion — upload CSV/Parquet training data"},
+        {"name": "stream", "description": "Sensor data — current readings and historical data from simulator"},
+        {"name": "websocket", "description": "Real-time WebSocket — live sensor streaming and alerts"},
+    ],
     lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
 app.add_middleware(
@@ -79,16 +103,30 @@ app.include_router(data.router, prefix="/api/v1")
 app.include_router(websocket.router)
 
 
-@app.get("/")
+@app.get("/", tags=["health"])
 async def root():
     return {
         "service": "Predictive Maintenance API",
         "version": "2.0.0",
         "docs": "/docs",
+        "redoc": "/redoc",
         "health": "/health",
+        "api_prefix": "/api/v1",
+        "endpoints": {
+            "auth": "/api/v1/auth",
+            "machines": "/api/v1/machines",
+            "alerts": "/api/v1/alerts",
+            "predictions": "/api/v1/predictions",
+            "maintenance": "/api/v1/maintenance",
+            "technicians": "/api/v1/technicians",
+            "ml": "/api/v1/ml",
+            "data": "/api/v1/data",
+            "stream": "/api/v1/stream",
+            "websocket": "/ws/sensors/{machine_id}",
+        },
     }
 
 
-@app.get("/health")
+@app.get("/health", tags=["health"])
 async def health():
     return {"status": "ok", "version": "2.0.0", "automation": "running"}

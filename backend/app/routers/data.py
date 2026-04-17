@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from app.models.user import User
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_admin
 from app.services.ml_service import ml_service, DATA_DIR
 
 router = APIRouter(prefix="/data", tags=["data"])
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/data", tags=["data"])
 ALLOWED_EXTENSIONS = {".csv", ".parquet"}
 
 
-@router.post("/upload")
+@router.post("/upload", dependencies=[Depends(require_admin)])
 async def upload_data_file(
     file: UploadFile = File(...),
     _: User = Depends(get_current_user),

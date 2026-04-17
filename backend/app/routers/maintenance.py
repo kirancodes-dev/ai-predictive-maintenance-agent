@@ -9,7 +9,7 @@ from app.models.maintenance import MaintenanceRecord
 from app.models.machine import Machine
 from app.models.user import User
 from app.schemas.maintenance import MaintenanceCreateRequest, MaintenanceUpdateRequest
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_manager, require_technician
 
 router = APIRouter(prefix="/maintenance", tags=["maintenance"])
 
