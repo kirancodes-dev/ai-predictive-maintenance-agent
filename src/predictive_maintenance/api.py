@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -9,8 +10,16 @@ from pydantic import BaseModel, Field
 from predictive_maintenance.service import MaintenanceService
 
 
-app = FastAPI(title="AI Predictive Maintenance Agent")
 service = MaintenanceService()
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    service.bootstrap()
+    yield
+
+
+app = FastAPI(title="AI Predictive Maintenance Agent", lifespan=lifespan)
 
 
 class PredictRequest(BaseModel):
@@ -18,11 +27,6 @@ class PredictRequest(BaseModel):
     vibration: float
     temperature: float
     current: float
-
-
-@app.on_event("startup")
-def startup() -> None:
-    service.bootstrap()
 
 
 @app.get("/health")

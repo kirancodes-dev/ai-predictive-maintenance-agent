@@ -23,7 +23,6 @@ class FailurePredictor:
             n_estimators=50,
             max_depth=3,
             learning_rate=0.1,
-            subsample=1.0,
             objective="binary:logistic",
             eval_metric="logloss",
         )
