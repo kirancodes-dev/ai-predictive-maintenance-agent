@@ -18,11 +18,12 @@ export const useWebSocket = ({ path, onMessage }: UseWebSocketOptions) => {
     websocketService.on(handler);
     return () => {
       websocketService.off(handler);
+      websocketService.disconnect(path);
     };
   }, [path]);
 
   return {
     isConnected: websocketService.isConnected,
-    send: websocketService.send.bind(websocketService),
+    send: (data: unknown) => websocketService.send(data, path),
   };
 };

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import random
+import uuid
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
@@ -8,6 +9,7 @@ from sqlalchemy import select
 from app.database import AsyncSessionLocal
 from app.models.sensor import Sensor
 from app.models.machine import Machine
+from app.models.alert import Alert
 from app.core.websocket_manager import ws_manager
 from app.core.security import decode_token
 from app.config import settings
@@ -31,9 +33,14 @@ _FALLBACK_RANGES = {
 }
 
 
+_recent_anomaly_keys: set = set()
+_ANOMALY_COOLDOWN_LIMIT = 200  # max tracked keys before pruning
+
 def _build_sensor_messages(sim: dict, machine_id: str, sensors: list, machine) -> list:
     ts = sim.get("timestamp", datetime.utcnow().isoformat())
     messages = []
+    alerts_to_persist: list[dict] = []
+
     for sensor in sensors:
         field = SIM_FIELD_MAP.get(sensor.type)
         if field and field in sim:
@@ -56,21 +63,38 @@ def _build_sensor_messages(sim: dict, machine_id: str, sensors: list, machine) -
 
         if is_anomaly and machine:
             severity = "critical" if value > sensor.critical_max * 1.1 else "warning"
-            messages.append({
-                "type": "alert",
-                "payload": {
-                    "id": f"live-{sensor.id}-{int(datetime.utcnow().timestamp())}",
-                    "machineId": machine_id,
-                    "machineName": machine.name if machine else machine_id,
+            # Deduplicate: only persist one alert per sensor per 60-second window
+            window_key = f"{sensor.id}-{int(datetime.utcnow().timestamp()) // 60}"
+            alert_id = str(uuid.uuid4())
+            alert_payload = {
+                "id": alert_id,
+                "machineId": machine_id,
+                "machineName": machine.name if machine else machine_id,
+                "severity": severity,
+                "status": "active",
+                "title": f"{sensor.type.capitalize()} anomaly detected",
+                "message": f"{sensor.name} reading {round(value, 2)} {sensor.unit} out of range",
+                "timestamp": ts,
+                "sensorId": sensor.id,
+                "value": round(value, 2),
+            }
+            messages.append({"type": "alert", "payload": alert_payload})
+
+            if window_key not in _recent_anomaly_keys:
+                _recent_anomaly_keys.add(window_key)
+                if len(_recent_anomaly_keys) > _ANOMALY_COOLDOWN_LIMIT:
+                    _recent_anomaly_keys.clear()
+                alerts_to_persist.append({
+                    "id": alert_id,
+                    "machine_id": machine_id,
+                    "machine_name": machine.name if machine else machine_id,
                     "severity": severity,
-                    "status": "active",
-                    "title": f"{sensor.type.capitalize()} anomaly detected",
-                    "message": f"{sensor.name} reading {round(value, 2)} {sensor.unit} out of range",
-                    "timestamp": ts,
-                    "sensorId": sensor.id,
+                    "sensor_id": sensor.id,
                     "value": round(value, 2),
-                },
-            })
+                    "sensor_type": sensor.type,
+                    "sensor_name": sensor.name,
+                    "sensor_unit": sensor.unit,
+                })
 
     if machine:
         messages.append({
@@ -78,7 +102,34 @@ def _build_sensor_messages(sim: dict, machine_id: str, sensors: list, machine) -
             "payload": {"machineId": machine_id, "status": machine.status},
         })
 
+    # Persist anomaly alerts to the database (fire-and-forget)
+    if alerts_to_persist:
+        asyncio.get_event_loop().create_task(_persist_alerts(alerts_to_persist))
+
     return messages
+
+
+async def _persist_alerts(alerts_data: list[dict]):
+    """Write anomaly alerts to the alerts table so they survive page refresh."""
+    try:
+        async with AsyncSessionLocal() as db:
+            for ad in alerts_data:
+                alert = Alert(
+                    id=ad["id"],
+                    machine_id=ad["machine_id"],
+                    machine_name=ad["machine_name"],
+                    severity=ad["severity"],
+                    status="active",
+                    title=f"{ad['sensor_type'].capitalize()} anomaly detected",
+                    message=f"{ad['sensor_name']} reading {ad['value']} {ad['sensor_unit']} out of range",
+                    timestamp=datetime.utcnow(),
+                    sensor_id=ad["sensor_id"],
+                    value=ad["value"],
+                )
+                db.add(alert)
+            await db.commit()
+    except Exception:
+        pass
 
 
 async def stream_sensor_data(websocket: WebSocket, machine_id: str):

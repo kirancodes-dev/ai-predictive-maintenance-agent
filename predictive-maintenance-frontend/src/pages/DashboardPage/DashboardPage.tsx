@@ -40,27 +40,36 @@ const DashboardPage: React.FC = () => {
     liveData[id] = liveQueries[i].data ?? [];
   });
 
-  // WebSocket for real-time alerts and notifications
-  useWebSocket({
-    path: '/ws/CNC_01',
-    onMessage: (type, payload) => {
-      const p = payload as Record<string, unknown>;
-      if (type === 'pre_failure_alert') {
-        const hours = (p.estimatedHoursRemaining as number) ?? 0;
-        const label = hours < 1 ? `${Math.round(hours * 60)}min`
-          : hours < 24 ? `${Math.round(hours)}h` : `${Math.floor(hours / 24)}d`;
-        toast.error(`⚠️ ${p.machineName}: Failure in ${label} — ${p.failureType}`,
-          { duration: 8000, id: `pfa-${p.machineId}` });
-      }
-      if (type === 'technician_assigned') {
-        toast.success(`👷 ${p.technicianName} auto-dispatched to ${p.machineName}`,
-          { duration: 6000, id: `ta-${p.machineId}` });
-      }
-      if (type === 'alert') {
-        qc.invalidateQueries('alerts');
-      }
-    },
-  });
+  // WebSocket for real-time alerts and notifications — ALL machines
+  const handleWsMessage = React.useCallback((type: string, payload: unknown) => {
+    const p = payload as Record<string, unknown>;
+    if (type === 'pre_failure_alert') {
+      const hours = (p.estimatedHoursRemaining as number) ?? 0;
+      const label = hours < 1 ? `${Math.round(hours * 60)}min`
+        : hours < 24 ? `${Math.round(hours)}h` : `${Math.floor(hours / 24)}d`;
+      toast.error(`⚠️ ${p.machineName}: Failure in ${label} — ${p.failureType}`,
+        { duration: 8000, id: `pfa-${p.machineId}` });
+      qc.invalidateQueries('alerts');
+    }
+    if (type === 'technician_assigned') {
+      toast.success(`👷 ${p.technicianName} auto-dispatched to ${p.machineName}`,
+        { duration: 6000, id: `ta-${p.machineId}` });
+    }
+    if (type === 'alert') {
+      const sev = p.severity as string;
+      const toastFn = sev === 'critical' ? toast.error : toast;
+      toastFn(`🚨 ${p.machineName}: ${p.title}`, {
+        duration: sev === 'critical' ? 10000 : 5000,
+        id: `alert-${p.id}`,
+      });
+      qc.invalidateQueries('alerts');
+    }
+  }, [qc]);
+
+  useWebSocket({ path: '/ws/CNC_01', onMessage: handleWsMessage });
+  useWebSocket({ path: '/ws/CNC_02', onMessage: handleWsMessage });
+  useWebSocket({ path: '/ws/PUMP_03', onMessage: handleWsMessage });
+  useWebSocket({ path: '/ws/CONVEYOR_04', onMessage: handleWsMessage });
 
   const onlineMachines = machines.filter((m) => m.status !== 'offline' && m.status !== 'maintenance').length;
   const criticalMachines = machines.filter((m) => m.riskLevel === 'critical' || m.status === 'critical').length;
