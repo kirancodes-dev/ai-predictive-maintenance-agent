@@ -125,12 +125,12 @@ const SensorChart: React.FC<SensorChartProps> = ({
 
   const shared = (
     <>
-      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.6} />
+      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #e2e8f0)" opacity={0.6} />
       <XAxis dataKey="timestamp" tickFormatter={tickFmt}
-        tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false}
+        tick={{ fontSize: 10, fill: 'var(--color-subtle, #94a3b8)' }} tickLine={false} axisLine={false}
         interval="preserveStartEnd" />
       <YAxis domain={domain} width={48}
-        tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false}
+        tick={{ fontSize: 10, fill: 'var(--color-subtle, #94a3b8)' }} tickLine={false} axisLine={false}
         tickFormatter={(v: number) => `${v}${unit.length <= 3 ? unit : ''}`} />
       <Tooltip content={<SensorTooltip unit={unit} />} />
       {thresholds && (
@@ -215,9 +215,9 @@ export const SensorChartPanel: React.FC<SensorChartPanelProps> = ({ isLoading, .
   const hasAnomaly = anomalyCount > 0;
   return (
     <div style={{
-      background: '#fff', borderRadius: 12, padding: '16px 20px',
-      border: `1px solid ${hasAnomaly ? '#fca5a5' : '#e2e8f0'}`,
-      boxShadow: hasAnomaly ? '0 0 0 2px #fee2e233' : '0 1px 4px rgba(0,0,0,0.06)',
+      background: 'var(--color-surface, #fff)', borderRadius: 12, padding: '16px 20px',
+      border: `1px solid ${hasAnomaly ? '#fca5a5' : 'var(--color-border, #e2e8f0)'}`,
+      boxShadow: hasAnomaly ? '0 0 0 2px #fee2e233' : '0 1px 4px var(--color-card-shadow, rgba(0,0,0,0.06))',
       display: 'flex', flexDirection: 'column', gap: 10,
       transition: 'border-color 0.3s, box-shadow 0.3s',
     }}>

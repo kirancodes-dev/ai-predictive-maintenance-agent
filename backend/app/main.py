@@ -25,7 +25,10 @@ async def lifespan(app: FastAPI):
         await seed_database(db)
 
     # Bootstrap ML model (load existing or train from data/)
-    ml_service.bootstrap()
+    try:
+        ml_service.bootstrap()
+    except Exception as e:
+        logger.warning(f"⚠️ ML bootstrap skipped: {e}")
 
     # Start background automation loop
     _automation_task = asyncio.create_task(run_automation_loop())

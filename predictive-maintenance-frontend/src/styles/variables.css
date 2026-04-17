@@ -4,11 +4,39 @@
   --color-border:   #e2e8f0;
   --color-text:     #0f172a;
   --color-muted:    #64748b;
+  --color-subtle:   #94a3b8;
   --color-primary:  #3b82f6;
   --color-success:  #22c55e;
   --color-warning:  #f59e0b;
   --color-danger:   #ef4444;
+  --color-sidebar:  #0f172a;
+  --color-header:   #1e293b;
+  --color-card-shadow: rgba(0,0,0,0.04);
+  --color-tooltip-bg: #fff;
+  --color-tooltip-border: #e2e8f0;
+  --color-input-bg: #fff;
+  --color-input-border: #e2e8f0;
   --radius-sm:      6px;
   --radius-md:      10px;
   --radius-lg:      16px;
+}
+
+[data-theme="dark"] {
+  --color-bg:       #0f172a;
+  --color-surface:  #1e293b;
+  --color-border:   #334155;
+  --color-text:     #f1f5f9;
+  --color-muted:    #94a3b8;
+  --color-subtle:   #64748b;
+  --color-primary:  #60a5fa;
+  --color-success:  #4ade80;
+  --color-warning:  #fbbf24;
+  --color-danger:   #f87171;
+  --color-sidebar:  #020617;
+  --color-header:   #0f172a;
+  --color-card-shadow: rgba(0,0,0,0.3);
+  --color-tooltip-bg: #1e293b;
+  --color-tooltip-border: #334155;
+  --color-input-bg: #1e293b;
+  --color-input-border: #475569;
 }

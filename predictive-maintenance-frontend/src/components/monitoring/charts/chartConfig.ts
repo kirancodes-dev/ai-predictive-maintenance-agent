@@ -68,7 +68,9 @@ export interface CombinedDataPoint {
 
 export function normalizeValue(type: KnownSensorType, value: number): number {
   const [dMin, dMax] = SENSOR_CONFIG[type].domain;
-  return Math.max(0, Math.min(100, ((value - dMin) / (dMax - dMin)) * 100));
+  // Use a wider spread: map domain to 10–90% so differences are more visible
+  const raw = (value - dMin) / (dMax - dMin);
+  return Math.max(0, Math.min(100, 10 + raw * 80));
 }
 
 export function getSensorTypeFromId(sensorId: string): KnownSensorType | null {

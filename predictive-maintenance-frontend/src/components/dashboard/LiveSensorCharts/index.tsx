@@ -49,12 +49,11 @@ const ChartTooltip = ({
 }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{
-      background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
-      padding: '10px 14px', fontSize: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-      minWidth: 170,
+    <div style={{ background: 'var(--color-tooltip-bg, #fff)', border: '1px solid var(--color-tooltip-border, #e2e8f0)', borderRadius: 10,
+      padding: '10px 14px', fontSize: 12, boxShadow: '0 4px 16px var(--color-card-shadow, rgba(0,0,0,0.12))',
+      minWidth: 170, color: 'var(--color-text, #0f172a)',
     }}>
-      <div style={{ color: '#94a3b8', marginBottom: 6, fontSize: 10 }}>{label}</div>
+      <div style={{ color: 'var(--color-subtle, #94a3b8)', marginBottom: 6, fontSize: 10 }}>{label}</div>
       {payload.map((p) => (
         <div key={p.name} style={{
           display: 'flex', justifyContent: 'space-between', gap: 16, marginBottom: 2,
@@ -142,9 +141,10 @@ const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
 
           return (
             <div key={type} style={{
-              background: '#fff', borderRadius: 14, padding: '18px 20px 12px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+              background: 'var(--color-surface, #fff)', borderRadius: 14, padding: '18px 20px 12px',
+              border: '1px solid var(--color-border, #e2e8f0)',
+              boxShadow: '0 2px 8px var(--color-card-shadow, rgba(0,0,0,0.04))',
+              transition: 'background 0.2s, border-color 0.2s',
             }}>
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -177,14 +177,14 @@ const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
               ) : (
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #e2e8f0)" opacity={0.5} />
                     <XAxis
-                      dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }}
+                      dataKey="label" tick={{ fontSize: 10, fill: 'var(--color-subtle, #94a3b8)' }}
                       tickLine={false} axisLine={false} interval="preserveStartEnd"
                     />
                     <YAxis
                       domain={cfg.domain} width={52}
-                      tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false}
+                      tick={{ fontSize: 10, fill: 'var(--color-subtle, #94a3b8)' }} tickLine={false} axisLine={false}
                       tickFormatter={(v: number) => `${v}${cfg.unit.length <= 3 ? cfg.unit : ''}`}
                     />
                     <Tooltip content={<ChartTooltip unit={cfg.unit} />} />

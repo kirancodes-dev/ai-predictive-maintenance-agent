@@ -3,13 +3,14 @@
   align-items: center;
   padding: 0 1.5rem;
   height: 56px;
-  background: #1e293b;
+  background: var(--color-header, #1e293b);
   color: #fff;
   gap: 1rem;
   position: sticky;
   top: 0;
   z-index: 100;
   flex-shrink: 0;
+  transition: background 0.2s;
 }
 
 .header__title {

@@ -12,8 +12,9 @@ const NAV = [
 
 const Sidebar: React.FC = () => (
   <nav style={{
-    width: '210px', background: '#0f172a', minHeight: '100vh',
+    width: '210px', background: 'var(--color-sidebar, #0f172a)', minHeight: '100vh',
     padding: '1rem 0', flexShrink: 0,
+    transition: 'background 0.2s',
   }}>
     {NAV.map(({ to, label, end }) => (
       <NavLink key={to} to={to} end={end}

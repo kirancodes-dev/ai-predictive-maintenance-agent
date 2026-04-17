@@ -9,9 +9,72 @@ body {
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.2s, color 0.2s;
 }
 
 input, button, textarea, select { font: inherit; }
+
+/* ── Dark mode overrides for inline-styled components ── */
+[data-theme="dark"] div[style*="background: #fff"],
+[data-theme="dark"] div[style*="background: '#fff'"],
+[data-theme="dark"] div[style*="background: rgb(255, 255, 255)"] {
+  background: var(--color-surface) !important;
+}
+
+[data-theme="dark"] div[style*="background: #f8fafc"],
+[data-theme="dark"] div[style*="background: '#f8fafc'"],
+[data-theme="dark"] div[style*="background: #f3f4f6"],
+[data-theme="dark"] div[style*="background: '#f3f4f6'"],
+[data-theme="dark"] div[style*="background: #f1f5f9"] {
+  background: var(--color-surface) !important;
+}
+
+[data-theme="dark"] div[style*="border: 1px solid #e2e8f0"],
+[data-theme="dark"] div[style*="border: 1.5px solid #e2e8f0"] {
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] span[style*="color: #94a3b8"],
+[data-theme="dark"] div[style*="color: #94a3b8"],
+[data-theme="dark"] p[style*="color: #94a3b8"],
+[data-theme="dark"] label[style*="color: #94a3b8"] {
+  color: var(--color-muted) !important;
+}
+
+[data-theme="dark"] span[style*="color: #64748b"],
+[data-theme="dark"] div[style*="color: #64748b"],
+[data-theme="dark"] p[style*="color: #64748b"] {
+  color: var(--color-muted) !important;
+}
+
+[data-theme="dark"] input[style*="border: 1px solid #e2e8f0"] {
+  background: var(--color-input-bg) !important;
+  border-color: var(--color-input-border) !important;
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] button[style*="border: 1px solid #e2e8f0"] {
+  border-color: var(--color-border) !important;
+  color: var(--color-muted) !important;
+}
+
+[data-theme="dark"] div[style*="background: #e2e8f0"],
+[data-theme="dark"] div[style*="background: '#e2e8f0'"] {
+  background: var(--color-border) !important;
+}
+
+[data-theme="dark"] div[style*="color: #0f172a"],
+[data-theme="dark"] span[style*="color: #0f172a"] {
+  color: var(--color-text) !important;
+}
+
+/* Recharts dark mode support */
+[data-theme="dark"] .recharts-cartesian-grid line {
+  stroke: #334155 !important;
+}
+[data-theme="dark"] .recharts-text {
+  fill: #94a3b8 !important;
+}
 
 @keyframes pulse-border {
   0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }

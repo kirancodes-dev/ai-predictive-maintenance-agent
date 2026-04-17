@@ -30,8 +30,10 @@ const ProtectedLayout: React.FC = () => {
       <div style={{ display: 'flex', flex: 1 }}>
         <Sidebar />
         <main style={{
-          flex: 1, padding: '2rem', background: '#f8fafc',
+          flex: 1, padding: '2rem', background: 'var(--color-bg)',
           minHeight: 'calc(100vh - 56px)', overflowY: 'auto',
+          color: 'var(--color-text)',
+          transition: 'background 0.2s, color 0.2s',
         }}>
           <Suspense fallback={<div style={{ padding: '2rem', color: '#888' }}>Loading…</div>}>
             <Routes>
