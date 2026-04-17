@@ -86,11 +86,22 @@ def compute_prediction(
     last_maintenance_date_str: Optional[str] = None,
     anomaly_fraction: float = 0.0,
     extra_adjustment_hours: float = 0.0,  # caller can pass external signal
+    # ── User-action signals ─────────────────────────────────────────────────
+    has_active_unacknowledged_alerts: bool = False,
+    maintenance_scheduled: bool = False,
+    maintenance_completed_recently: bool = False,
+    technician_assigned: bool = False,
 ) -> dict:
     """
     Returns a dict with:
       machine_id, machine_name, estimated_hours_remaining, predicted_failure_at,
       confidence, failure_type, recommendation, urgency
+
+    User-action signals adjust the prediction:
+      - has_active_unacknowledged_alerts: active alerts piling up → raise urgency
+      - maintenance_scheduled: a fix is planned → extend hours slightly as buffer
+      - maintenance_completed_recently: fresh service → reduce effective risk
+      - technician_assigned: human already engaged → no auto-assignment needed
     """
     now = datetime.utcnow()
 
@@ -100,6 +111,20 @@ def compute_prediction(
     # Reduce by anomaly fraction (each 10% anomaly rate cuts TTF by ~8%)
     anomaly_factor = 1.0 - (anomaly_fraction * 0.8)
     adjusted_hours = base_hours * max(0.1, anomaly_factor)
+
+    # ── User-action adjustments ─────────────────────────────────────────────
+    if maintenance_completed_recently:
+        # Fresh maintenance cuts effective risk significantly
+        adjusted_hours *= 1.4
+        risk_score = max(0.0, risk_score - 20.0)
+
+    if has_active_unacknowledged_alerts:
+        # Unacknowledged alerts mean the problem is escalating
+        adjusted_hours *= 0.75
+
+    if maintenance_scheduled:
+        # Scheduled maintenance acts as a buffer — extend hours slightly
+        adjusted_hours *= 1.15
 
     # Age penalty: machines older than 5 years get up to 15% reduction
     if install_date_str:
@@ -117,7 +142,7 @@ def compute_prediction(
     # Failure type
     failure_type, recommendation = _infer_failure_type(tags)
 
-    # Confidence
+    # Confidence — higher when technician is actively engaged
     days_since_maint = None
     if last_maintenance_date_str:
         try:
@@ -127,6 +152,9 @@ def compute_prediction(
             pass
 
     confidence = _compute_confidence(risk_score, anomaly_fraction, days_since_maint)
+    if technician_assigned:
+        # Human engaged → higher confidence
+        confidence = min(0.98, confidence + 0.08)
 
     urgency = _hours_to_urgency(adjusted_hours)
     predicted_failure_at = now + timedelta(hours=adjusted_hours)

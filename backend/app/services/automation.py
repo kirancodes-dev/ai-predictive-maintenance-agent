@@ -198,6 +198,69 @@ async def _create_milestone_alert(
     db.add(alert)
 
 
+# ── User-action state gathering ───────────────────────────────────────────────
+
+async def _get_user_action_signals(
+    db: AsyncSession, machine_id: str
+) -> dict:
+    """
+    Query all user-driven state for a machine that influences predictions:
+      - active unacknowledged alerts
+      - scheduled/completed maintenance
+      - manual technician assignment
+    """
+    now = datetime.utcnow()
+
+    # Active unacknowledged alerts
+    alert_result = await db.execute(
+        select(Alert).where(
+            Alert.machine_id == machine_id,
+            Alert.status == "active",
+            Alert.acknowledged_at.is_(None),
+        )
+    )
+    active_alerts = alert_result.scalars().all()
+    has_active_unacknowledged = len(active_alerts) > 0
+
+    # Maintenance record state
+    maint_result = await db.execute(
+        select(MaintenanceRecord).where(
+            MaintenanceRecord.machine_id == machine_id,
+        ).order_by(MaintenanceRecord.created_at.desc())
+    )
+    maintenance_records = maint_result.scalars().all()
+
+    maintenance_scheduled = any(
+        r.status in ("scheduled", "in_progress") for r in maintenance_records
+    )
+    maintenance_completed_recently = any(
+        r.status == "completed"
+        and r.completed_date is not None
+        and (now - datetime.fromisoformat(r.completed_date)).days <= 7
+        for r in maintenance_records
+    )
+
+    # Check if a technician was manually assigned (via prediction record)
+    pred_result = await db.execute(
+        select(FailurePrediction).where(
+            FailurePrediction.machine_id == machine_id,
+            FailurePrediction.is_active == True,
+        )
+    )
+    pred = pred_result.scalar_one_or_none()
+    technician_assigned = (
+        pred is not None and pred.assigned_technician_id is not None
+    )
+
+    return {
+        "has_active_unacknowledged_alerts": has_active_unacknowledged,
+        "maintenance_scheduled": maintenance_scheduled,
+        "maintenance_completed_recently": maintenance_completed_recently,
+        "technician_assigned": technician_assigned,
+        "active_alert_count": len(active_alerts),
+    }
+
+
 # ── Core automation cycle ───────────────────────────────────────────────────
 
 async def _run_cycle() -> None:
@@ -220,7 +283,12 @@ async def _run_cycle() -> None:
 
 
 async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) -> None:
-    # ── Compute fresh prediction ──
+    # ── Gather user-action signals ──
+    signals = await _get_user_action_signals(db, machine.id)
+
+    # ── Compute fresh prediction with user signals ──
+    # active_alert_count is used for notifications but not accepted by compute_prediction
+    prediction_signals = {k: v for k, v in signals.items() if k != "active_alert_count"}
     pred_data = compute_prediction(
         machine_id=machine.id,
         machine_name=machine.name,
@@ -228,6 +296,8 @@ async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) ->
         tags=machine.tags or [],
         install_date_str=machine.install_date,
         last_maintenance_date_str=machine.next_maintenance_date,
+        anomaly_fraction=0.0,  # anomaly fraction from live sensor data handled separately
+        **prediction_signals,
     )
 
     hours_remaining = pred_data["estimated_hours_remaining"]
@@ -260,8 +330,18 @@ async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) ->
     await db.flush()
 
     # ── Auto-assign technician for high/critical/imminent ──
+    # Skip if a technician was manually assigned (user already engaged)
+    # Also skip if maintenance is already scheduled or recently completed
+    auto_assign = (
+        pred.urgency in ("high", "critical", "imminent")
+        and not pred.assigned_technician_id
+        and not signals["technician_assigned"]
+        and not signals["maintenance_scheduled"]
+        and not signals["maintenance_completed_recently"]
+    )
+
     tech = None
-    if pred.urgency in ("high", "critical", "imminent") and not pred.assigned_technician_id:
+    if auto_assign:
         tech = await _auto_assign(db, pred, machine.tags or [])
         if tech:
             await _auto_create_work_order(db, pred, machine.name)
@@ -323,7 +403,27 @@ async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) ->
                 machine.name, hours_remaining, milestone_hours
             )
 
+    # ── Clear alerts when maintenance is completed ──
+    if signals["maintenance_completed_recently"]:
+        resolved_count = await db.execute(
+            select(Alert).where(
+                Alert.machine_id == machine.id,
+                Alert.status == "active",
+            )
+        )
+        active_to_clear = resolved_count.scalars().all()
+        for alert in active_to_clear:
+            alert.status = "resolved"
+            alert.resolved_at = now
+        if active_to_clear:
+            await db.flush()
+            logger.info(
+                "Auto-resolved %d alerts for %s after maintenance completion",
+                len(active_to_clear), machine.id
+            )
+
     # ── Always broadcast current prediction state (lightweight) ──
+    # Include user-action context so the frontend can show what influenced the prediction
     await ws_manager.broadcast_all({
         "type": "failure_prediction",
         "payload": {
@@ -332,11 +432,18 @@ async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) ->
             "estimatedHoursRemaining": hours_remaining,
             "predictedFailureAt": pred.predicted_failure_at.isoformat(),
             "urgency": pred.urgency,
-            "confidence": pred.confidence,
-            "failureType": pred.failure_type,
+            "confidence": pred_data["confidence"],
+            "failureType": pred_data["failure_type"],
             "assignedTechnician": pred.assigned_technician_name,
             "workOrderId": pred.auto_work_order_id,
             "timestamp": now.isoformat(),
+            # User-action context — what influenced this prediction
+            "userContext": {
+                "hasActiveUnacknowledgedAlerts": signals["has_active_unacknowledged_alerts"],
+                "maintenanceScheduled": signals["maintenance_scheduled"],
+                "maintenanceCompletedRecently": signals["maintenance_completed_recently"],
+                "technicianAssigned": signals["technician_assigned"],
+            },
         },
     })
 

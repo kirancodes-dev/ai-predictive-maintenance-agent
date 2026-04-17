@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
+import httpx
 
 from app.database import get_db
 from app.models.machine import Machine
@@ -14,6 +15,7 @@ from app.models.user import User
 from app.services.prediction_engine import compute_prediction
 from app.schemas.common import ApiResponse
 from app.dependencies import get_current_user
+from app.config import settings
 
 router = APIRouter(prefix="/predictions", tags=["predictions"])
 
