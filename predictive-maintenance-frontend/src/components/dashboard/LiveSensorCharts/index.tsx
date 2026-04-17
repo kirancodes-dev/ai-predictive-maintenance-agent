@@ -1,20 +1,37 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useStreamData } from '../../../hooks/useStreamData';
 import { SensorChartPanel } from '../../monitoring/charts/SensorChart';
 import {
-  KNOWN_SENSOR_TYPES, type KnownSensorType, type SensorChartPoint,
+  SENSOR_CONFIG, KNOWN_SENSOR_TYPES, type KnownSensorType, type SensorChartPoint,
 } from '../../monitoring/charts/chartConfig';
 import type { SensorReadingDto } from '../../../services/api/streamApi';
 
-/* ── Props (kept for backward compat with DashboardPage) ── */
 interface Props {
   liveData: Record<string, SensorReadingDto[]>;
   machineIds: string[];
 }
 
-/* ── Per-machine stream panel ── */
-const MachineStreamCharts: React.FC<{ machineId: string; label: string }> = ({ machineId, label }) => {
+const MACHINE_LABELS: Record<string, string> = {
+  CNC_01: 'CNC Machine #1',
+  CNC_02: 'CNC Machine #2',
+  PUMP_03: 'Pump #3',
+  CONVEYOR_04: 'Conveyor #4',
+};
+
+const MACHINE_ICONS: Record<string, string> = {
+  CNC_01: '🔧',
+  CNC_02: '🔧',
+  PUMP_03: '💧',
+  CONVEYOR_04: '🏭',
+};
+
+/* ── Per-machine card with expand/collapse ── */
+const MachineCard: React.FC<{ machineId: string }> = ({ machineId }) => {
+  const [expanded, setExpanded] = useState(false);
   const { readings, isConnected } = useStreamData(machineId);
+
+  const label = MACHINE_LABELS[machineId] ?? machineId;
+  const icon = MACHINE_ICONS[machineId] ?? '⚙️';
 
   const chartDataByType = useMemo<Record<KnownSensorType, SensorChartPoint[]>>(() => {
     const map = {} as Record<KnownSensorType, SensorChartPoint[]>;
@@ -28,64 +45,149 @@ const MachineStreamCharts: React.FC<{ machineId: string; label: string }> = ({ m
 
   const totalAnomalies = readings.filter((r) => r.isAnomaly).length;
 
+  // Latest value per sensor type
+  const latestValues = useMemo(() => {
+    const result: Record<string, { value: number; unit: string } | null> = {};
+    for (const type of KNOWN_SENSOR_TYPES) {
+      const typeReadings = readings.filter((r) => r.type === type);
+      if (typeReadings.length) {
+        const last = typeReadings[typeReadings.length - 1];
+        result[type] = { value: last.value, unit: SENSOR_CONFIG[type].unit };
+      } else {
+        result[type] = null;
+      }
+    }
+    return result;
+  }, [readings]);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Machine header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <span style={{
-          width: 9, height: 9, borderRadius: '50%', display: 'inline-block',
-          background: isConnected ? '#22c55e' : '#ef4444',
-          boxShadow: isConnected ? '0 0 8px #22c55e80' : 'none',
-        }} />
-        <span style={{ fontSize: 14, fontWeight: 700 }}>
-          {label}
-        </span>
-        <span style={{ fontSize: 12, color: '#94a3b8' }}>
-          {isConnected ? 'Streaming live' : 'Reconnecting…'} · {readings.length} readings
-        </span>
-        {totalAnomalies > 0 && (
-          <span style={{
-            background: '#fee2e2', color: '#ef4444', borderRadius: 12,
-            padding: '2px 10px', fontSize: 12, fontWeight: 700,
-          }}>
-            ⚠ {totalAnomalies} anomal{totalAnomalies > 1 ? 'ies' : 'y'}
-          </span>
-        )}
+    <div style={{
+      background: 'var(--color-surface, #fff)',
+      borderRadius: 12,
+      border: `1px solid ${totalAnomalies > 0 ? '#fca5a5' : 'var(--color-border, #e2e8f0)'}`,
+      boxShadow: totalAnomalies > 0
+        ? '0 0 0 2px #fee2e233'
+        : '0 1px 4px var(--color-card-shadow, rgba(0,0,0,0.06))',
+      overflow: 'hidden',
+      transition: 'border-color 0.3s, box-shadow 0.3s',
+    }}>
+      {/* ── Compact card header ── */}
+      <div style={{
+        padding: '16px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        flexWrap: 'wrap',
+      }}>
+        {/* Left: machine info */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 28 }}>{icon}</span>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%', display: 'inline-block',
+                background: isConnected ? '#22c55e' : '#ef4444',
+                boxShadow: isConnected ? '0 0 6px #22c55e80' : 'none',
+              }} />
+              <span style={{ fontSize: 15, fontWeight: 700 }}>{label}</span>
+              {totalAnomalies > 0 && (
+                <span style={{
+                  background: '#fee2e2', color: '#ef4444', borderRadius: 12,
+                  padding: '1px 8px', fontSize: 11, fontWeight: 700,
+                }}>
+                  ⚠ {totalAnomalies}
+                </span>
+              )}
+            </div>
+            <span style={{ fontSize: 11, color: '#94a3b8' }}>
+              {isConnected ? 'Live' : 'Offline'} · {readings.length} readings
+            </span>
+          </div>
+        </div>
+
+        {/* Center: quick sensor values */}
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          {KNOWN_SENSOR_TYPES.map((type) => {
+            const cfg = SENSOR_CONFIG[type];
+            const latest = latestValues[type];
+            return (
+              <div key={type} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                minWidth: 60,
+              }}>
+                <span style={{ fontSize: 14 }}>{cfg.icon}</span>
+                <span style={{
+                  fontSize: 15, fontWeight: 700, color: cfg.color,
+                  fontFamily: 'monospace', lineHeight: 1.2,
+                }}>
+                  {latest ? latest.value.toFixed(1) : '—'}
+                </span>
+                <span style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase' }}>
+                  {cfg.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Right: View Charts button */}
+        <button
+          onClick={() => setExpanded(!expanded)}
+          style={{
+            padding: '8px 18px',
+            fontSize: 13,
+            fontWeight: 600,
+            border: '1px solid var(--color-border, #e2e8f0)',
+            borderRadius: 8,
+            background: expanded ? '#3b82f6' : 'var(--color-surface, #fff)',
+            color: expanded ? '#fff' : '#3b82f6',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span style={{ fontSize: 16 }}>{expanded ? '📉' : '📊'}</span>
+          {expanded ? 'Hide Charts' : 'View Charts'}
+        </button>
       </div>
 
-      {/* 2x2 sensor charts — exact same component as monitoring screen */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-        gap: 16,
-      }}>
-        {KNOWN_SENSOR_TYPES.map((type) => (
-          <SensorChartPanel
-            key={type}
-            type={type}
-            data={chartDataByType[type]}
-            mode="live"
-            height={220}
-            isLoading={false}
-          />
-        ))}
-      </div>
+      {/* ── Expandable charts section ── */}
+      {expanded && (
+        <div style={{
+          padding: '0 20px 20px',
+          borderTop: '1px solid var(--color-border, #e2e8f0)',
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+            gap: 16,
+            marginTop: 16,
+          }}>
+            {KNOWN_SENSOR_TYPES.map((type) => (
+              <SensorChartPanel
+                key={type}
+                type={type}
+                data={chartDataByType[type]}
+                mode="live"
+                height={220}
+                isLoading={false}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-const MACHINE_LABELS: Record<string, string> = {
-  CNC_01: 'CNC Machine #1',
-  CNC_02: 'CNC Machine #2',
-  PUMP_03: 'Pump #3',
-  CONVEYOR_04: 'Conveyor #4',
 };
 
 /* ── Main component ── */
 const LiveSensorCharts: React.FC<Props> = ({ machineIds }) => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-      {/* Section header */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
         <h2 style={{
           margin: 0, fontSize: '1.1rem', fontWeight: 800,
@@ -95,17 +197,12 @@ const LiveSensorCharts: React.FC<Props> = ({ machineIds }) => {
           <span>Real-Time Sensor Trends</span>
         </h2>
         <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>
-          Live WebSocket streaming · {machineIds.length} machines · same charts as monitoring
+          Click "View Charts" on any machine to see live line plots
         </p>
       </div>
 
-      {/* One chart section per machine */}
       {machineIds.map((mid) => (
-        <MachineStreamCharts
-          key={mid}
-          machineId={mid}
-          label={MACHINE_LABELS[mid] ?? mid}
-        />
+        <MachineCard key={mid} machineId={mid} />
       ))}
     </div>
   );
