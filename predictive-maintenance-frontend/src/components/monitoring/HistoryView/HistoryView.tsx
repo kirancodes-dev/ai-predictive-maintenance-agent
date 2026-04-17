@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useHistoricalData } from '../../../hooks/useHistoricalData';
+import { useBaseline } from '../../../hooks/useBaseline';
 import { SensorChartPanel, CombinedChartPanel } from '../charts';
 import {
   SENSOR_CONFIG,
   KNOWN_SENSOR_TYPES,
   type KnownSensorType,
   type SensorChartPoint,
+  type SensorThresholds,
   getSensorTypeFromId,
   buildCombinedHistoryData,
 } from '../charts/chartConfig';
@@ -85,6 +87,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ machineId, machineName }) => 
   }, [activePreset, useCustom, customFrom, customTo]);
 
   const { data: histories, isLoading, isError } = useHistoricalData(machineId, range);
+  const { baseline, isLoading: baselineLoading, overallHealth } = useBaseline(machineId);
 
   /* Per-type chart data */
   const chartDataByType = useMemo<Record<KnownSensorType, SensorChartPoint[]>>(() => {
@@ -95,6 +98,20 @@ const HistoryView: React.FC<HistoryViewProps> = ({ machineId, machineName }) => 
     }
     return map;
   }, [histories]);
+
+  /* Auto-computed thresholds — no manual config */
+  const thresholdsByType = useMemo<Record<KnownSensorType, SensorThresholds | undefined>>(() => {
+    const map = {} as Record<KnownSensorType, SensorThresholds | undefined>;
+    for (const type of KNOWN_SENSOR_TYPES) {
+      const bl = baseline?.sensors[type];
+      map[type] = bl
+        ? { warningMin: bl.warningMin, warningMax: bl.warningMax,
+            criticalMin: bl.criticalMin, criticalMax: bl.criticalMax,
+            mean: bl.mean, trend: bl.trend, trendPct: bl.trendPct }
+        : undefined;
+    }
+    return map;
+  }, [baseline]);
 
   /* Combined chart data */
   const combinedData = useMemo(
@@ -161,11 +178,29 @@ const HistoryView: React.FC<HistoryViewProps> = ({ machineId, machineName }) => 
           </div>
         </div>
 
-        {/* Right side: info + export */}
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        {/* Right side: baseline health + info + export */}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          {overallHealth !== null && !baselineLoading && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6, borderRadius: 10,
+              padding: '4px 12px',
+              background: overallHealth >= 80 ? '#f0fdf4' : overallHealth >= 60 ? '#fffbeb' : '#fee2e2',
+            }}>
+              <span style={{ fontSize: 12, fontWeight: 600,
+                color: overallHealth >= 80 ? '#16a34a' : overallHealth >= 60 ? '#d97706' : '#ef4444' }}>
+                {overallHealth >= 80 ? '✓' : overallHealth >= 60 ? '⚠' : '✗'} Health {overallHealth}%
+              </span>
+              <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>auto-baseline</span>
+            </div>
+          )}
+          {baselineLoading && (
+            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+              Computing baseline…
+            </span>
+          )}
           {!isLoading && dataPoints > 0 && (
             <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-              {dataPoints.toLocaleString()} data points
+              {dataPoints.toLocaleString()} pts
             </span>
           )}
           <button
@@ -204,7 +239,8 @@ const HistoryView: React.FC<HistoryViewProps> = ({ machineId, machineName }) => 
             mode="history"
             height={240}
             showBrush
-            isLoading={isLoading}
+            thresholds={thresholdsByType[type]}
+            isLoading={isLoading || baselineLoading}
           />
         ))}
       </div>

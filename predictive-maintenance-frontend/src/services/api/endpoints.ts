@@ -8,6 +8,7 @@ export const ENDPOINTS = {
   // Streaming
   STREAM_LIVE: (machineId: string) => `/stream/${machineId}/live`,
   STREAM_HISTORY: (machineId: string) => `/stream/${machineId}/history`,
+  STREAM_BASELINE: (machineId: string) => `/stream/${machineId}/baseline`,
 
   // Alerts
   ALERTS: '/alerts',
