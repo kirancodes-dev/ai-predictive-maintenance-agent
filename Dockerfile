@@ -10,10 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 
 # Install Python deps
 COPY backend/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt 2>/dev/null || true
-RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy aiosqlite asyncpg pydantic-settings \
-    python-jose[cryptography] passlib[bcrypt] httpx python-multipart \
-    xgboost joblib pandas alembic
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ ./
 COPY data/ ./data/
