@@ -63,14 +63,22 @@ export interface CombinedDataPoint {
   vibration_pct?: number;
   rpm_pct?: number;
   current_pct?: number;
-  [key: string]: number | string | undefined;
+  temperature_anomaly?: boolean;
+  vibration_anomaly?: boolean;
+  rpm_anomaly?: boolean;
+  current_anomaly?: boolean;
+  [key: string]: number | string | boolean | undefined;
 }
 
+// Straight 0–100% of domain range so warning/critical zones land at sensible %
 export function normalizeValue(type: KnownSensorType, value: number): number {
   const [dMin, dMax] = SENSOR_CONFIG[type].domain;
-  // Use a wider spread: map domain to 10–90% so differences are more visible
-  const raw = (value - dMin) / (dMax - dMin);
-  return Math.max(0, Math.min(100, 10 + raw * 80));
+  return Math.max(0, Math.min(100, ((value - dMin) / (dMax - dMin)) * 100));
+}
+
+// Returns normalized % where a threshold value lands — used to draw per-sensor lines
+export function normalizeThreshold(type: KnownSensorType, value: number): number {
+  return normalizeValue(type, value);
 }
 
 export function getSensorTypeFromId(sensorId: string): KnownSensorType | null {
@@ -90,7 +98,8 @@ export function buildCombinedLiveData(
     if (!bySecond.has(key)) bySecond.set(key, { timestamp: r.timestamp });
     const point = bySecond.get(key)!;
     point[type] = r.value;
-    (point as Record<string, unknown>)[`${type}_pct`] = normalizeValue(type, r.value);
+    point[`${type}_pct`] = normalizeValue(type, r.value);
+    if (r.isAnomaly) point[`${type}_anomaly`] = true;
   }
   return Array.from(bySecond.values());
 }

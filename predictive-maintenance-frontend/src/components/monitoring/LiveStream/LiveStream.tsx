@@ -114,8 +114,12 @@ const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
         ))}
       </div>
 
-      {/* Combined normalized overview */}
-      <CombinedChartPanel data={combinedData} mode="live" height={340} isLoading={false} />
+      {/* Combined sensor overview — passes real thresholds so per-sensor lines land correctly */}
+      <CombinedChartPanel
+        data={combinedData} mode="live" height={420}
+        isLoading={baselineLoading}
+        thresholdsByType={thresholdsByType}
+      />
 
       {/* Threshold legend */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11,

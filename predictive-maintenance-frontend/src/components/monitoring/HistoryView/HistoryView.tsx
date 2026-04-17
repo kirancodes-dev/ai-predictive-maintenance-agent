@@ -166,7 +166,7 @@ const HistoryView: React.FC<Props> = ({ machineId, machineName }) => {
         ))}
       </div>
 
-      <CombinedChartPanel data={combinedData} mode="history" height={380} showBrush isLoading={isLoading} />
+      <CombinedChartPanel data={combinedData} mode="history" height={420} isLoading={isLoading} />
 
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11, color: '#94a3b8', paddingLeft: 4 }}>
         {KNOWN_SENSOR_TYPES.map((t) => (
