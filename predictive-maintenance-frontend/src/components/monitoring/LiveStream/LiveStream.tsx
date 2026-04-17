@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useStreamData } from '../../../hooks/useStreamData';
 import { useBaseline } from '../../../hooks/useBaseline';
+import ThresholdOverrideModal from '../ThresholdOverrideModal';
 import { SensorChartPanel } from '../charts/SensorChart';
 import { CombinedChartPanel } from '../charts/CombinedChart';
 import {
@@ -15,6 +16,7 @@ interface LiveStreamProps {
 }
 
 const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
+  const [showOverride, setShowOverride] = useState(false);
   const { readings, isConnected, clearReadings } = useStreamData(machineId);
   const { baseline, isLoading: baselineLoading, overallHealth, computedAt } = useBaseline(machineId);
 
@@ -91,6 +93,12 @@ const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
             </span>
           )}
           <span style={{ fontSize: 12, color: '#94a3b8' }}>{readings.length} readings</span>
+          <button onClick={() => setShowOverride(true)} style={{
+            padding: '4px 12px', fontSize: 12, border: '1px solid #e2e8f0',
+            borderRadius: 8, background: 'none', cursor: 'pointer', fontWeight: 600,
+          }}>
+            ⚙ Thresholds
+          </button>
           <button onClick={clearReadings} style={{
             padding: '4px 12px', fontSize: 12, border: '1px solid #e2e8f0',
             borderRadius: 8, background: 'none', cursor: 'pointer',
@@ -99,6 +107,16 @@ const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
           </button>
         </div>
       </div>
+
+      {showOverride && (
+        <ThresholdOverrideModal
+          machineId={machineId}
+          machineName={machineName ?? machineId}
+          baseline={baseline?.sensors}
+          onClose={() => setShowOverride(false)}
+          onSaved={() => setShowOverride(false)}
+        />
+      )}
 
       {/* Latest sensor value cards */}
       <SensorReadings readings={readings} />

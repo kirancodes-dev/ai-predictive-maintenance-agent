@@ -12,6 +12,7 @@ from app.models.user import User
 from app.schemas.sensor import SensorReadingOut, SensorHistoryOut, SensorDataPoint
 from app.dependencies import get_current_user
 from app.config import settings
+from app.services.signal_quality import signal_quality
 
 router = APIRouter(prefix="/stream", tags=["stream"])
 
@@ -41,21 +42,38 @@ _BASELINE_CACHE_TTL_SEC = 600  # 10 minutes
 def _sim_reading_to_sensors(
     sim: dict, sensors: List[Sensor], machine_id: str
 ) -> List[SensorReadingOut]:
-    ts = sim.get("timestamp", datetime.utcnow().isoformat())
+    # Normalise timestamp to UTC ISO-8601
+    raw_ts = sim.get("timestamp", datetime.utcnow().isoformat())
+    try:
+        ts = datetime.fromisoformat(raw_ts.replace("Z", "+00:00")).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+    except Exception:
+        ts = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
     readings = []
     for sensor in sensors:
         field = SIM_FIELD_MAP.get(sensor.type)
         if field and field in sim:
-            value = float(sim[field])
+            raw_value = float(sim[field])
         else:
             lo, hi = _FALLBACK_RANGES.get(sensor.type, (0.0, 100.0))
-            value = round(random.uniform(lo, hi), 2)
-        is_anomaly = value > sensor.critical_max or value < sensor.critical_min
+            raw_value = round(random.uniform(lo, hi), 2)
+
+        # Signal quality — filter impossible values, spikes, noise
+        filtered_value, quality_issues, trustworthy = signal_quality.check(
+            machine_id, sensor.type, raw_value, ts
+        )
+
+        # A reading is anomalous if it exceeds thresholds AND passed quality checks
+        is_anomaly = (
+            trustworthy and
+            (filtered_value > sensor.critical_max or filtered_value < sensor.critical_min)
+        )
+
         readings.append(SensorReadingOut(
             sensorId=sensor.id,
             machineId=machine_id,
             type=sensor.type,
-            value=round(value, 2),
+            value=round(filtered_value, 2),
             unit=sensor.unit,
             timestamp=ts,
             isAnomaly=is_anomaly,

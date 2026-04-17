@@ -29,13 +29,19 @@ from app.models.prediction import FailurePrediction
 from app.models.maintenance import MaintenanceRecord
 from app.models.alert import Alert
 from app.services.prediction_engine import compute_prediction
+from app.services.signal_quality import signal_quality
 from app.core.websocket_manager import ws_manager
 from app.services.notification_service import notify_pre_failure_alert, notify_technician_assigned
 
 logger = logging.getLogger("automation")
 
-POLL_INTERVAL_SECONDS = 30  # check every 30 seconds
-RISK_THRESHOLD_FOR_PREDICTION = 20  # only track machines with risk >= this
+POLL_INTERVAL_SECONDS = 30
+RISK_THRESHOLD_FOR_PREDICTION = 20
+
+# Cascading failure: if a machine's risk jumps this much in one cycle,
+# warn neighbouring machines in the same location
+CASCADE_RISK_JUMP_THRESHOLD = 15   # risk score delta
+CASCADE_NEIGHBOR_RISK_MIN = 30     # only warn neighbours already above this
 
 # milestones (hours before failure) where we send a pre_failure_alert
 NOTIFICATION_MILESTONES = [
@@ -279,7 +285,86 @@ async def _run_cycle() -> None:
             except Exception as exc:
                 logger.error("Error processing %s: %s", machine.id, exc, exc_info=True)
 
+        # ── Cascading failure detection ──
+        await _check_cascading_failures(db, machines, now)
+
         await db.commit()
+
+
+async def _check_cascading_failures(
+    db: AsyncSession, machines: list, now: datetime
+) -> None:
+    """
+    Detect when one machine's rapid risk increase could trigger failures in
+    neighbouring machines (same location / zone).
+
+    If machine A's risk jumped CASCADE_RISK_JUMP_THRESHOLD points since last
+    cycle AND machine B is in the same location with risk >= CASCADE_NEIGHBOR_RISK_MIN,
+    create a cascade-warning alert for B (once, gated by alert fatigue).
+    """
+    # Build location → machines map
+    by_location: dict = {}
+    for m in machines:
+        loc = (m.location or "unknown").split(" ")[0]  # use first word of location as zone
+        by_location.setdefault(loc, []).append(m)
+
+    for location, zone_machines in by_location.items():
+        if len(zone_machines) < 2:
+            continue
+
+        # Find machines that jumped significantly this cycle
+        triggering = [
+            m for m in zone_machines
+            if m.risk_score >= 60  # already high-risk
+        ]
+        neighbors = [
+            m for m in zone_machines
+            if m.risk_score >= CASCADE_NEIGHBOR_RISK_MIN
+        ]
+
+        for trigger in triggering:
+            for neighbor in neighbors:
+                if neighbor.id == trigger.id:
+                    continue
+                # Only create cascade alert if not already alerted recently
+                cascade_key = f"cascade_{trigger.id}"
+                if not signal_quality.alert_is_fresh(neighbor.id, cascade_key):
+                    continue
+
+                alert = Alert(
+                    machine_id=neighbor.id,
+                    machine_name=neighbor.name,
+                    severity="warning",
+                    status="active",
+                    title=f"⚠️ Cascade risk: {trigger.name} failing nearby",
+                    message=(
+                        f"{trigger.name} (same zone: {location}) has critical risk score "
+                        f"{trigger.risk_score:.0f}/100. "
+                        f"Shared infrastructure or load transfer may accelerate failure on "
+                        f"{neighbor.name}. Inspect immediately."
+                    ),
+                    sensor_id=None,
+                    value=trigger.risk_score,
+                )
+                db.add(alert)
+                signal_quality.record_alert(neighbor.id, cascade_key)
+
+                await ws_manager.broadcast_all({
+                    "type": "cascade_warning",
+                    "payload": {
+                        "triggerMachineId": trigger.id,
+                        "triggerMachineName": trigger.name,
+                        "triggerRiskScore": trigger.risk_score,
+                        "affectedMachineId": neighbor.id,
+                        "affectedMachineName": neighbor.name,
+                        "location": location,
+                        "timestamp": now.isoformat(),
+                    },
+                })
+                logger.warning(
+                    "CASCADE WARNING: %s (risk %.0f) may affect %s in zone %s",
+                    trigger.name, trigger.risk_score, neighbor.name, location,
+                )
 
 
 async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) -> None:
@@ -368,11 +453,21 @@ async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) ->
             # Send email/Slack notification
             await notify_technician_assigned(tech_payload)
 
-    # ── Check notification milestones ──
+    # ── Check notification milestones (with alert-fatigue gate) ──
     for milestone_hours, flag_field in NOTIFICATION_MILESTONES:
         if hours_remaining <= milestone_hours and not getattr(pred, flag_field):
             setattr(pred, flag_field, True)
+
+            # Alert fatigue: skip if we already alerted this severity recently
+            severity_bucket = "critical" if hours_remaining <= 24 else "high"
+            if not signal_quality.alert_is_fresh(machine.id, severity_bucket):
+                logger.info(
+                    "ALERT SUPPRESSED (fatigue) [%s] milestone %dh", machine.id, milestone_hours
+                )
+                continue
+
             await _create_milestone_alert(db, pred, hours_remaining)
+            signal_quality.record_alert(machine.id, severity_bucket)
 
             msg_payload = {
                 "machineId": machine.id,
