@@ -20,7 +20,7 @@ const FailurePredictionPanel: React.FC = () => {
     <section>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
         <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
-          🔮 Failure Predictions
+          Failure Predictions
         </h2>
         {isFetching && (
           <span style={{ fontSize: '0.75rem', color: 'var(--color-muted, #888)' }}>Refreshing…</span>
@@ -35,14 +35,14 @@ const FailurePredictionPanel: React.FC = () => {
             borderRadius: '9999px',
           }}
         >
-          🤖 Automated · updates every 30s
+          Automated · updates every 30s
         </span>
       </div>
 
       {isLoading && <p style={{ color: 'var(--color-muted, #888)', fontSize: '0.875rem' }}>Analyzing machine health…</p>}
 
       {!isLoading && shown.length === 0 && (
-        <p style={{ color: '#22c55e', fontSize: '0.875rem' }}>✅ All machines are operating within normal parameters.</p>
+        <p style={{ color: '#059669', fontSize: '0.875rem' }}>All machines are operating within normal parameters.</p>
       )}
 
       <div

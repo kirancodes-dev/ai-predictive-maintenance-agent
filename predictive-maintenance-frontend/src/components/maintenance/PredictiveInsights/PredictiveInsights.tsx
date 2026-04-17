@@ -43,7 +43,7 @@ const FailurePredictionCard: React.FC<{ prediction: RichPrediction }> = ({ predi
           {prediction.urgency.toUpperCase()}
         </span>
       </div>
-      <div style={{ fontSize: '1.5rem', fontWeight: 800, color }}>
+      <div style={{ fontSize: '1.5rem', fontWeight: 700, color }}>
         {hoursLabel(prediction.estimatedHoursRemaining)}
       </div>
       <div style={{ fontSize: '0.8rem', color: '#555', marginBottom: '0.4rem' }}>remaining</div>
@@ -51,7 +51,7 @@ const FailurePredictionCard: React.FC<{ prediction: RichPrediction }> = ({ predi
       <div style={{ fontSize: '0.8125rem' }}><strong>Confidence:</strong> {(prediction.confidence * 100).toFixed(0)}%</div>
       {prediction.assignedTechnicianName && (
         <div style={{ fontSize: '0.8125rem', color: '#16a34a', fontWeight: 600, marginTop: '0.25rem' }}>
-          👷 {prediction.assignedTechnicianName}
+          Assigned: {prediction.assignedTechnicianName}
         </div>
       )}
       <div
@@ -64,7 +64,7 @@ const FailurePredictionCard: React.FC<{ prediction: RichPrediction }> = ({ predi
           padding: '0.4rem 0.6rem',
         }}
       >
-        💡 {prediction.recommendation}
+        {prediction.recommendation}
       </div>
     </div>
   );
@@ -82,14 +82,14 @@ const PredictiveInsights: React.FC = () => {
   return (
     <div>
       <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>
-        🔮 Predictive Insights
+        Predictive Insights
         <span style={{ fontSize: '0.75rem', fontWeight: 400, color: '#888', marginLeft: '0.5rem' }}>
           (auto-refreshes every 30s)
         </span>
       </h3>
       {isLoading && <p>Analyzing machine data…</p>}
       {!isLoading && predictions.length === 0 && (
-        <p style={{ color: '#22c55e' }}>✅ No at-risk machines detected.</p>
+        <p style={{ color: '#059669' }}>No at-risk machines detected.</p>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
         {predictions.map((p) => (

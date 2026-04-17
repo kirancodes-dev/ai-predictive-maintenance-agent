@@ -7,7 +7,7 @@ import math
 from app.database import get_db
 from app.models.alert import Alert
 from app.models.user import User
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_operator
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -63,7 +63,7 @@ async def list_alerts(
     }
 
 
-@router.patch("/{alert_id}/acknowledge")
+@router.patch("/{alert_id}/acknowledge", dependencies=[Depends(require_operator)])
 async def acknowledge_alert(
     alert_id: str,
     db: AsyncSession = Depends(get_db),
@@ -80,7 +80,7 @@ async def acknowledge_alert(
     return {"data": _alert_to_dict(alert)}
 
 
-@router.patch("/{alert_id}/resolve")
+@router.patch("/{alert_id}/resolve", dependencies=[Depends(require_operator)])
 async def resolve_alert(
     alert_id: str,
     db: AsyncSession = Depends(get_db),

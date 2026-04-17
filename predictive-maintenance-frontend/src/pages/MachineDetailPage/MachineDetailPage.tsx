@@ -98,15 +98,15 @@ const MachineDetailPage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-      <Link to="/" style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.875rem' }}>
+      <Link to="/" style={{ color: 'var(--color-primary, #1a56db)', textDecoration: 'none', fontSize: '0.875rem' }}>
         ← Back to Dashboard
       </Link>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '1rem 0' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{m.name}</h1>
-          <p style={{ color: '#64748b', margin: '0.25rem 0' }}>{m.model} — {m.location}</p>
+          <h1 style={{ fontSize: '1.375rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>{m.name}</h1>
+          <p style={{ color: 'var(--color-muted, #64748b)', margin: '4px 0 0', fontSize: 13 }}>{m.model} — {m.location}</p>
         </div>
         <div style={{
           padding: '0.5rem 1rem', borderRadius: 8,
@@ -136,8 +136,8 @@ const MachineDetailPage: React.FC = () => {
 
       {/* Prediction Details */}
       {pred && (
-        <div style={{ background: '#fff', borderRadius: 8, padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid #e2e8f0' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>🔮 Failure Prediction</h3>
+        <div style={{ background: 'var(--color-surface, #fff)', borderRadius: 10, padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid var(--color-border, #e2e8f0)' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Failure Prediction</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', fontSize: '0.875rem' }}>
             <div><span style={{ color: '#64748b' }}>Failure Type:</span> {pred.failureType}</div>
             <div><span style={{ color: '#64748b' }}>Urgency:</span> <span style={{ fontWeight: 600, color: pred.urgency === 'critical' ? '#ef4444' : '#f59e0b' }}>{pred.urgency?.toUpperCase()}</span></div>
@@ -150,7 +150,7 @@ const MachineDetailPage: React.FC = () => {
       {/* Live Sensor Readings */}
       {liveData && Array.isArray(liveData) && (
         <div style={{ background: '#fff', borderRadius: 8, padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid #e2e8f0' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>📡 Live Sensor Readings</h3>
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Live Sensor Readings</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
             {liveData.map((s: any) => (
               <div key={s.sensorId} style={{
@@ -172,7 +172,7 @@ const MachineDetailPage: React.FC = () => {
       {/* Sensor History Chart */}
       <div style={{ background: '#fff', borderRadius: 8, padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>📈 Sensor History</h3>
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Sensor History</h3>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             {['1h', '6h', '24h', '7d'].map(range => (
               <button
@@ -180,7 +180,7 @@ const MachineDetailPage: React.FC = () => {
                 onClick={() => setTimeRange(range)}
                 style={{
                   padding: '0.25rem 0.75rem', borderRadius: 4, border: '1px solid #e2e8f0',
-                  background: timeRange === range ? '#3b82f6' : '#fff',
+                  background: timeRange === range ? 'var(--color-primary, #1a56db)' : '#fff',
                   color: timeRange === range ? '#fff' : '#64748b',
                   cursor: 'pointer', fontSize: '0.75rem', fontWeight: 500,
                 }}
@@ -214,7 +214,7 @@ const MachineDetailPage: React.FC = () => {
 
       {/* Machine Info */}
       <div style={{ background: '#fff', borderRadius: 8, padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid #e2e8f0' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>🏭 Machine Info</h3>
+        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Machine Info</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', fontSize: '0.875rem' }}>
           <div><span style={{ color: '#64748b' }}>Manufacturer:</span> {m.manufacturer}</div>
           <div><span style={{ color: '#64748b' }}>Serial:</span> {m.serialNumber}</div>
@@ -227,7 +227,7 @@ const MachineDetailPage: React.FC = () => {
 
       {/* Recent Alerts */}
       <div style={{ background: '#fff', borderRadius: 8, padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid #e2e8f0' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>🚨 Recent Alerts</h3>
+        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Recent Alerts</h3>
         {alertsData && alertsData.length > 0 ? (
           <div style={{ fontSize: '0.875rem' }}>
             {alertsData.slice(0, 5).map((alert: any) => (

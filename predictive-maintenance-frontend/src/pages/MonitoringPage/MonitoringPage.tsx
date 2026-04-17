@@ -31,24 +31,24 @@ const MonitoringPage: React.FC = () => {
       {/* Page header with live clock */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>
-            📡 Real-Time Machine Monitor
+          <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
+            Real-Time Machine Monitor
           </h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
-            Live sensor data with auto-computed baselines · WebSocket streaming
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
+            Live sensor data with auto-computed baselines
           </p>
         </div>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          background: '#0f172a', borderRadius: 12, padding: '10px 18px',
+          background: 'var(--color-sidebar, #111827)', borderRadius: 10, padding: '8px 16px',
         }}>
           <span style={{
-            width: 10, height: 10, borderRadius: '50%', background: '#22c55e',
-            display: 'inline-block', boxShadow: '0 0 8px #22c55e80',
+            width: 8, height: 8, borderRadius: '50%', background: '#059669',
+            display: 'inline-block', boxShadow: '0 0 6px rgba(5,150,105,0.5)',
             animation: 'pulse 2s infinite',
           }} />
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600 }}>LIVE</span>
-          <span style={{ color: '#fff', fontSize: 16, fontWeight: 700, fontFamily: 'monospace', minWidth: 80, textAlign: 'center' }}>
+          <span style={{ color: '#9ca3af', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em' }}>LIVE</span>
+          <span style={{ color: '#e5e7eb', fontSize: 15, fontWeight: 600, fontFamily: 'monospace', minWidth: 76, textAlign: 'center' }}>
             {now.toLocaleTimeString()}
           </span>
         </div>
@@ -99,7 +99,7 @@ const MonitoringPage: React.FC = () => {
               marginBottom: -2, color: activeTab === tab ? '#3b82f6' : '#64748b',
               transition: 'all 0.15s',
             }}>
-            {tab === 'live' ? '⚡ Live Stream' : '📈 Historical Data'}
+            {tab === 'live' ? 'Live Stream' : 'Historical Data'}
           </button>
         ))}
       </div>

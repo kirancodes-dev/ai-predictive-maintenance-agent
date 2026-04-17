@@ -47,7 +47,7 @@ const SensorReadings: React.FC<Props> = ({ readings }) => {
                 </span>
               )}
             </div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: statusColor, lineHeight: 1, marginBottom: 6 }}>
+            <div style={{ fontSize: 26, fontWeight: 700, color: statusColor, lineHeight: 1, marginBottom: 6 }}>
               {r ? r.value.toFixed(2) : '—'}
               <span style={{ fontSize: 12, fontWeight: 500, marginLeft: 4, color: '#94a3b8' }}>
                 {cfg.unit}

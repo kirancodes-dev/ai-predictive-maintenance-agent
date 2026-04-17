@@ -24,7 +24,7 @@ const TechnicianAvailability: React.FC = () => {
     <section>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
         <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
-          👷 Technician Availability
+          Technician Availability
         </h2>
         <span
           style={{
@@ -102,7 +102,7 @@ const TechCard: React.FC<TechCardProps> = ({ tech, status }) => {
         <div style={{ fontSize: '0.75rem', color: 'var(--color-muted, #555)' }}>{tech.specialty}</div>
         {tech.currentAssignmentMachineName && (
           <div style={{ fontSize: '0.75rem', color: '#b45309', fontWeight: 500 }}>
-            🔧 {tech.currentAssignmentMachineName}
+            Assigned: {tech.currentAssignmentMachineName}
           </div>
         )}
         {tech.estimatedFreeAt && (

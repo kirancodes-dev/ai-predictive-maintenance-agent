@@ -94,7 +94,7 @@ class AvailabilityUpdate(BaseModel):
     current_assignment_machine_name: Optional[str] = None
 
 
-@router.patch("/{technician_id}/availability")
+@router.patch("/{technician_id}/availability", dependencies=[Depends(require_manager)])
 async def update_availability(
     technician_id: str,
     body: AvailabilityUpdate,

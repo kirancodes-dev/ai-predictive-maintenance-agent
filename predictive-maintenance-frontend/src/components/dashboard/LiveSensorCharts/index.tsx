@@ -19,10 +19,10 @@ const MACHINE_LABELS: Record<string, string> = {
 };
 
 const MACHINE_ICONS: Record<string, string> = {
-  CNC_01: '🔧',
-  CNC_02: '🔧',
-  PUMP_03: '💧',
-  CONVEYOR_04: '🏭',
+  CNC_01: 'C1',
+  CNC_02: 'C2',
+  PUMP_03: 'P3',
+  CONVEYOR_04: 'V4',
 };
 
 /* ── Per-machine card with expand/collapse ── */
@@ -31,7 +31,7 @@ const MachineCard: React.FC<{ machineId: string }> = ({ machineId }) => {
   const { readings, isConnected } = useStreamData(machineId);
 
   const label = MACHINE_LABELS[machineId] ?? machineId;
-  const icon = MACHINE_ICONS[machineId] ?? '⚙️';
+  const icon = MACHINE_ICONS[machineId] ?? 'M';
 
   const chartDataByType = useMemo<Record<KnownSensorType, SensorChartPoint[]>>(() => {
     const map = {} as Record<KnownSensorType, SensorChartPoint[]>;
@@ -150,7 +150,6 @@ const MachineCard: React.FC<{ machineId: string }> = ({ machineId }) => {
             whiteSpace: 'nowrap',
           }}
         >
-          <span style={{ fontSize: 16 }}>{expanded ? '📉' : '📊'}</span>
           {expanded ? 'Hide Charts' : 'View Charts'}
         </button>
       </div>
@@ -190,13 +189,12 @@ const LiveSensorCharts: React.FC<Props> = ({ machineIds }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
         <h2 style={{
-          margin: 0, fontSize: '1.1rem', fontWeight: 800,
+          margin: 0, fontSize: '1.1rem', fontWeight: 700,
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          <span style={{ fontSize: 20 }}>📊</span>
           <span>Real-Time Sensor Trends</span>
         </h2>
-        <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>
+        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-muted, #94a3b8)' }}>
           Click "View Charts" on any machine to see live line plots
         </p>
       </div>

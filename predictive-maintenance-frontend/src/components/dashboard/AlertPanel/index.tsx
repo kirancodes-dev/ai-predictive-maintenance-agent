@@ -2,15 +2,15 @@ import React from 'react';
 import type { Alert } from '../../../types/alert.types';
 
 const SEV_COLORS: Record<string, { border: string; bg: string; text: string; icon: string }> = {
-  info:     { border: '#3b82f6', bg: '#eff6ff', text: '#1d4ed8', icon: 'ℹ️' },
-  warning:  { border: '#f59e0b', bg: '#fffbeb', text: '#b45309', icon: '⚠️' },
-  error:    { border: '#f97316', bg: '#fff7ed', text: '#c2410c', icon: '🔶' },
-  critical: { border: '#ef4444', bg: '#fef2f2', text: '#dc2626', icon: '🔴' },
+  info:     { border: '#1a56db', bg: '#eff6ff', text: '#1d4ed8', icon: 'i' },
+  warning:  { border: '#f59e0b', bg: '#fffbeb', text: '#b45309', icon: '!' },
+  error:    { border: '#f97316', bg: '#fff7ed', text: '#c2410c', icon: '!!' },
+  critical: { border: '#dc2626', bg: '#fef2f2', text: '#dc2626', icon: '!!!' },
 };
 
 const STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> = {
   active:       { bg: '#fef2f2', text: '#ef4444', label: 'Active' },
-  acknowledged: { bg: '#eff6ff', text: '#3b82f6', label: 'Acknowledged' },
+  acknowledged: { bg: '#eff6ff', text: '#1a56db', label: 'Acknowledged' },
   resolved:     { bg: '#f0fdf4', text: '#22c55e', label: 'Resolved' },
 };
 
@@ -39,7 +39,7 @@ const AlertPanel: React.FC<Props> = ({
   onAcknowledge,
   onResolve,
   maxHeight = '520px',
-  title = '🚨 Active Alerts',
+  title = 'Active Alerts',
 }) => (
   <div style={{
     background: 'var(--color-surface, #fff)',
@@ -83,7 +83,7 @@ const AlertPanel: React.FC<Props> = ({
           textAlign: 'center',
           color: 'var(--color-muted, #94a3b8)',
         }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+          <div style={{ fontSize: 14, marginBottom: 8, color: '#059669', fontWeight: 600 }}>✓</div>
           <div style={{ fontSize: 13 }}>No alerts — all systems nominal</div>
         </div>
       )}
@@ -143,7 +143,7 @@ const AlertPanel: React.FC<Props> = ({
               marginBottom: 4,
             }}>
               <span style={{ fontSize: 11, color: 'var(--color-muted, #64748b)' }}>
-                🏭 {a.machineName}
+                {a.machineName}
               </span>
               <span style={{
                 fontSize: 9,

@@ -30,6 +30,7 @@ from app.models.maintenance import MaintenanceRecord
 from app.models.alert import Alert
 from app.services.prediction_engine import compute_prediction
 from app.core.websocket_manager import ws_manager
+from app.services.notification_service import notify_pre_failure_alert, notify_technician_assigned
 
 logger = logging.getLogger("automation")
 
@@ -265,22 +266,27 @@ async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) ->
         if tech:
             await _auto_create_work_order(db, pred, machine.name)
 
+            tech_payload = {
+                "machineId": machine.id,
+                "machineName": machine.name,
+                "technicianId": tech.id,
+                "technicianName": tech.name,
+                "technicianEmail": tech.email,
+                "technicianPhone": tech.phone,
+                "specialty": tech.specialty,
+                "estimatedFreeAt": tech.estimated_free_at.isoformat() if tech.estimated_free_at else None,
+                "workOrderId": pred.auto_work_order_id,
+                "timestamp": now.isoformat(),
+            }
+
             # Broadcast technician assigned
             await ws_manager.broadcast_all({
                 "type": "technician_assigned",
-                "payload": {
-                    "machineId": machine.id,
-                    "machineName": machine.name,
-                    "technicianId": tech.id,
-                    "technicianName": tech.name,
-                    "technicianEmail": tech.email,
-                    "technicianPhone": tech.phone,
-                    "specialty": tech.specialty,
-                    "estimatedFreeAt": tech.estimated_free_at.isoformat() if tech.estimated_free_at else None,
-                    "workOrderId": pred.auto_work_order_id,
-                    "timestamp": now.isoformat(),
-                },
+                "payload": tech_payload,
             })
+
+            # Send email/Slack notification
+            await notify_technician_assigned(tech_payload)
 
     # ── Check notification milestones ──
     for milestone_hours, flag_field in NOTIFICATION_MILESTONES:
@@ -308,6 +314,9 @@ async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) ->
                 "type": "pre_failure_alert",
                 "payload": msg_payload,
             })
+
+            # Send email/Slack notification
+            await notify_pre_failure_alert(msg_payload)
 
             logger.info(
                 "PRE-FAILURE ALERT sent: %s — %.1fh remaining (milestone %dh)",

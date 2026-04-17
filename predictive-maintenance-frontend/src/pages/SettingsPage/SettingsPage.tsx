@@ -24,9 +24,9 @@ const SettingsPage: React.FC = () => {
   const tabStyle = (active: boolean) => ({
     padding: '0.5rem 1.25rem',
     border: 'none',
-    borderBottom: active ? '2px solid #3b82f6' : '2px solid transparent',
+    borderBottom: active ? '2px solid var(--color-primary, #1a56db)' : '2px solid transparent',
     background: 'transparent',
-    color: active ? '#3b82f6' : '#64748b',
+    color: active ? 'var(--color-primary, #1a56db)' : '#64748b',
     fontWeight: active ? 600 : 400,
     cursor: 'pointer' as const,
     fontSize: '0.875rem',
@@ -44,7 +44,8 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <h1 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>⚙️ Settings</h1>
+      <h1 style={{ fontSize: '1.375rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>Settings</h1>
+      <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--color-muted, #64748b)', marginBottom: '1rem' }}>Manage your profile, alert thresholds, and system preferences</p>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
@@ -84,7 +85,7 @@ const SettingsPage: React.FC = () => {
       {/* Alerts Tab */}
       {activeTab === 'alerts' && (
         <div style={{ background: '#fff', borderRadius: 8, padding: '1.5rem', border: '1px solid #e2e8f0' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>🚨 Alert Thresholds</h3>
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Alert Thresholds</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
               <label style={labelStyle}>Temperature Warning (°C)</label>

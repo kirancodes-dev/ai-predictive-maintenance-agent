@@ -14,12 +14,32 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = '["http://localhost:3000","http://localhost:5173"]'
     ENVIRONMENT: str = "development"
 
+    # Email notifications (SMTP)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    NOTIFICATION_EMAIL_ENABLED: bool = False
+    NOTIFICATION_EMAIL_RECIPIENTS: str = "[]"
+
+    # Slack notifications
+    SLACK_WEBHOOK_URL: str = ""
+    NOTIFICATION_SLACK_ENABLED: bool = False
+
     @property
     def cors_origins_list(self) -> List[str]:
         try:
             return json.loads(self.CORS_ORIGINS)
         except Exception:
             return ["http://localhost:3000", "http://localhost:5173"]
+
+    @property
+    def email_recipients_list(self) -> List[str]:
+        try:
+            return json.loads(self.NOTIFICATION_EMAIL_RECIPIENTS)
+        except Exception:
+            return []
 
     class Config:
         env_file = ".env"

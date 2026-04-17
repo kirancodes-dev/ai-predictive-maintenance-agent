@@ -162,8 +162,8 @@ const ReportsPage: React.FC = () => {
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>📊 Reports & Analytics</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-muted, #94a3b8)' }}>
+          <h1 style={{ fontSize: '1.375rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>Reports & Analytics</h1>
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
             System health overview and exportable JSON reports
           </p>
         </div>
@@ -173,7 +173,7 @@ const ReportsPage: React.FC = () => {
             style={{
               padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
               border: '1px solid var(--color-border, #e2e8f0)',
-              background: showJsonPreview ? 'var(--color-primary, #3b82f6)' : 'var(--color-surface, #fff)',
+              background: showJsonPreview ? 'var(--color-primary, #1a56db)' : 'var(--color-surface, #fff)',
               color: showJsonPreview ? '#fff' : 'var(--color-text, #334155)',
               cursor: 'pointer', transition: 'all 0.15s',
               display: 'flex', alignItems: 'center', gap: 6,
@@ -186,9 +186,9 @@ const ReportsPage: React.FC = () => {
             style={{
               padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
               border: 'none',
-              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+              background: '#1a56db',
               color: '#fff', cursor: 'pointer', transition: 'all 0.15s',
-              boxShadow: '0 2px 8px rgba(59,130,246,0.3)',
+              boxShadow: '0 2px 8px rgba(26,86,219,0.3)',
               display: 'flex', alignItems: 'center', gap: 6,
             }}
             onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; }}
@@ -326,7 +326,7 @@ const ReportsPage: React.FC = () => {
         </div>
 
         <div style={{ background: 'var(--color-surface, #fff)', borderRadius: 8, padding: '1.25rem', border: '1px solid var(--color-border, #e2e8f0)' }}>
-          <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem' }}>🤖 ML Model Status</h3>
+          <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem' }}>ML Model Status</h3>
           {mlStatus ? (
             <div style={{ fontSize: '0.875rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -355,7 +355,7 @@ const ReportsPage: React.FC = () => {
       {/* Predictions Table */}
       {predictions && predictions.length > 0 && (
         <div style={{ background: 'var(--color-surface, #fff)', borderRadius: 8, padding: '1.25rem', border: '1px solid var(--color-border, #e2e8f0)' }}>
-          <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem' }}>🔮 All Predictions</h3>
+          <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem' }}>All Predictions</h3>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>

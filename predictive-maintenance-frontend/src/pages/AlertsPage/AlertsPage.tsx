@@ -4,9 +4,9 @@ import AlertPanel from '../../components/dashboard/AlertPanel';
 import type { AlertSeverity, AlertStatus } from '../../types/alert.types';
 
 const SEVERITY_OPTIONS: { value: AlertSeverity | 'all'; label: string; icon: string; color: string }[] = [
-  { value: 'all',      label: 'All',      icon: '📋', color: '#64748b' },
-  { value: 'critical', label: 'Critical', icon: '🔴', color: '#ef4444' },
-  { value: 'error',    label: 'Error',    icon: '🔶', color: '#f97316' },
+  { value: 'all',      label: 'All',      icon: '•', color: '#64748b' },
+  { value: 'critical', label: 'Critical', icon: '!', color: '#dc2626' },
+  { value: 'error',    label: 'Error',    icon: '!!', color: '#f97316' },
   { value: 'warning',  label: 'Warning',  icon: '⚠️', color: '#f59e0b' },
   { value: 'info',     label: 'Info',     icon: 'ℹ️', color: '#3b82f6' },
 ];
@@ -81,10 +81,10 @@ const AlertsPage: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
       <div>
-        <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>
-          🚨 Alert Management
+        <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
+          Alert Management
         </h1>
-        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-muted, #94a3b8)' }}>
+        <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
           Monitor and manage system alerts across all machines
         </p>
       </div>
@@ -92,11 +92,11 @@ const AlertsPage: React.FC = () => {
       {/* Summary stats */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         {[
-          { label: 'Total Alerts', value: total, icon: '📊', color: '#3b82f6' },
-          { label: 'Active', value: activeCount, icon: '🔴',
-            color: activeCount > 0 ? '#ef4444' : '#22c55e' },
-          { label: 'Critical', value: criticalCount, icon: '⚠️',
-            color: criticalCount > 0 ? '#ef4444' : '#22c55e' },
+          { label: 'Total Alerts', value: total, icon: '📊', color: '#1a56db' },
+          { label: 'Active', value: activeCount, icon: '●',
+            color: activeCount > 0 ? '#dc2626' : '#059669' },
+          { label: 'Critical', value: criticalCount, icon: '⚠',
+            color: criticalCount > 0 ? '#dc2626' : '#059669' },
         ].map((s) => (
           <div key={s.label} style={{
             padding: '12px 20px',

@@ -125,9 +125,9 @@ const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) =>
             {/* View link */}
             <Link to={`/monitoring?machine=${m.id}`}
               style={{ display: 'block', textAlign: 'center', padding: '8px', fontSize: 12,
-                       fontWeight: 600, color: '#3b82f6', background: 'rgba(59,130,246,0.08)',
+                       fontWeight: 600, color: '#1a56db', background: 'rgba(26,86,219,0.08)',
                        borderRadius: 8, textDecoration: 'none', transition: 'all 0.15s',
-                       border: '1px solid rgba(59,130,246,0.15)' }}>
+                       border: '1px solid rgba(26,86,219,0.15)' }}>
               View Live Sensors →
             </Link>
           </div>

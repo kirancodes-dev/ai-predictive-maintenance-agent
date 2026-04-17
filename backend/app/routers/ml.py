@@ -35,7 +35,7 @@ async def ml_status(_: User = Depends(get_current_user)):
     return {"data": ml_service.get_status()}
 
 
-@router.post("/train")
+@router.post("/train", dependencies=[Depends(require_admin)])
 async def train_model(_: User = Depends(get_current_user)):
     """Train/retrain the ML model from data in the data/ directory."""
     success = ml_service.train_from_directory(str(ml_service.DATA_DIR))
@@ -53,7 +53,7 @@ async def train_model(_: User = Depends(get_current_user)):
     }
 
 
-@router.post("/train/upload")
+@router.post("/train/upload", dependencies=[Depends(require_admin)])
 async def train_from_upload(
     file: UploadFile = File(...),
     _: User = Depends(get_current_user),

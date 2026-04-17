@@ -10,18 +10,18 @@ interface WorkOrder {
 }
 
 const WO_STATUS: Record<string, { color: string; bg: string; icon: string }> = {
-  pending:     { color: '#f59e0b', bg: '#fffbeb', icon: '⏳' },
-  scheduled:   { color: '#3b82f6', bg: '#eff6ff', icon: '📅' },
-  in_progress: { color: '#8b5cf6', bg: '#f5f3ff', icon: '🔄' },
-  completed:   { color: '#22c55e', bg: '#f0fdf4', icon: '✅' },
-  cancelled:   { color: '#94a3b8', bg: '#f8fafc', icon: '❌' },
+  pending:     { color: '#f59e0b', bg: '#fffbeb', icon: '•' },
+  scheduled:   { color: '#1a56db', bg: '#eff6ff', icon: '•' },
+  in_progress: { color: '#8b5cf6', bg: '#f5f3ff', icon: '•' },
+  completed:   { color: '#059669', bg: '#f0fdf4', icon: '✓' },
+  cancelled:   { color: '#94a3b8', bg: '#f8fafc', icon: '×' },
 };
 
 const WO_TYPE: Record<string, { icon: string; color: string }> = {
-  predictive: { icon: '🤖', color: '#8b5cf6' },
-  preventive: { icon: '🛡️', color: '#3b82f6' },
-  corrective: { icon: '🔧', color: '#f97316' },
-  emergency:  { icon: '🚨', color: '#ef4444' },
+  predictive: { icon: 'P', color: '#8b5cf6' },
+  preventive: { icon: 'V', color: '#1a56db' },
+  corrective: { icon: 'C', color: '#f97316' },
+  emergency:  { icon: 'E', color: '#dc2626' },
 };
 
 const MaintenancePage: React.FC = () => {
@@ -33,8 +33,8 @@ const MaintenancePage: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div>
-        <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>🔧 Maintenance</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-muted, #94a3b8)' }}>
+        <h1 style={{ fontSize: '1.375rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>Maintenance</h1>
+        <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
           Work orders, predictions, and technician management
         </p>
       </div>
@@ -44,7 +44,7 @@ const MaintenancePage: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>📋 Work Orders</h2>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Work Orders</h2>
             {records.length > 0 && (
               <span style={{
                 fontSize: 11, fontWeight: 600, color: 'var(--color-muted)',
@@ -113,10 +113,10 @@ const MaintenancePage: React.FC = () => {
                     fontSize: 12, color: 'var(--color-muted, #64748b)',
                     display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
                   }}>
-                    <span>🏭 {r.machineName}</span>
+                    <span>{r.machineName}</span>
                     <span style={{ color: typeCfg.color, fontWeight: 600 }}>{r.type}</span>
-                    <span>📅 {r.scheduledDate}</span>
-                    {r.assignedTo && <span>👷 {r.assignedTo}</span>}
+                    <span>{r.scheduledDate}</span>
+                    {r.assignedTo && <span>{r.assignedTo}</span>}
                   </div>
                   {r.description && (
                     <div style={{

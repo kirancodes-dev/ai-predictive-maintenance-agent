@@ -65,7 +65,7 @@ async def list_maintenance(
     }
 
 
-@router.post("")
+@router.post("", dependencies=[Depends(require_technician)])
 async def create_maintenance(
     body: MaintenanceCreateRequest,
     db: AsyncSession = Depends(get_db),
@@ -92,7 +92,7 @@ async def create_maintenance(
     return {"data": _record_to_dict(record)}
 
 
-@router.patch("/{record_id}")
+@router.patch("/{record_id}", dependencies=[Depends(require_technician)])
 async def update_maintenance(
     record_id: str,
     body: MaintenanceUpdateRequest,

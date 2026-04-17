@@ -64,7 +64,7 @@ const FailurePredictionCard: React.FC<Props> = ({ prediction }) => {
             borderRadius: '9999px',
             background: cfg.color,
             color: '#fff',
-            fontWeight: 800,
+            fontWeight: 700,
             fontSize: '0.7rem',
             letterSpacing: '0.05em',
           }}
@@ -75,7 +75,7 @@ const FailurePredictionCard: React.FC<Props> = ({ prediction }) => {
 
       {/* Big countdown */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <span style={{ fontSize: '2rem', fontWeight: 800, color: cfg.color, lineHeight: 1 }}>
+        <span style={{ fontSize: '2rem', fontWeight: 700, color: cfg.color, lineHeight: 1 }}>
           {formatCountdown(hoursLeft)}
         </span>
         <span style={{ fontSize: '0.8125rem', color: 'var(--color-muted, #555)' }}>until predicted failure</span>
@@ -86,15 +86,15 @@ const FailurePredictionCard: React.FC<Props> = ({ prediction }) => {
         <div><strong>Failure type:</strong> {prediction.failureType}</div>
         <div><strong>Confidence:</strong> {(prediction.confidence * 100).toFixed(0)}%</div>
         {prediction.assignedTechnicianName && (
-          <div style={{ color: '#16a34a', fontWeight: 600 }}>
-            👷 Assigned: {prediction.assignedTechnicianName}
+          <div style={{ color: '#059669', fontWeight: 600 }}>
+            Assigned: {prediction.assignedTechnicianName}
           </div>
         )}
         {!prediction.assignedTechnicianName && prediction.urgency !== 'low' && (
-          <div style={{ color: '#f59e0b', fontWeight: 600 }}>⏳ Awaiting technician assignment…</div>
+          <div style={{ color: '#f59e0b', fontWeight: 600 }}>Awaiting technician assignment…</div>
         )}
         {prediction.workOrderId && (
-          <div style={{ color: '#6366f1' }}>📋 Work order auto-created</div>
+          <div style={{ color: '#6366f1' }}>Work order auto-created</div>
         )}
       </div>
 
@@ -109,7 +109,7 @@ const FailurePredictionCard: React.FC<Props> = ({ prediction }) => {
           padding: '0.4rem 0.6rem',
         }}
       >
-        💡 {prediction.recommendation}
+        {prediction.recommendation}
       </div>
     </div>
   );

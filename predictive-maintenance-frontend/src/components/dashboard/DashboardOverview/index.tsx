@@ -9,56 +9,61 @@ interface Stat {
 }
 
 const DashboardOverview: React.FC<{ stats: Stat[] }> = ({ stats }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
     {stats.map((s) => (
       <div key={s.label} style={{
-        background: 'var(--color-surface, #fff)',
-        border: '1px solid var(--color-border, #e2e8f0)',
-        borderRadius: 14,
-        padding: '1.25rem 1.25rem 1rem',
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-lg, 12px)',
+        padding: '1.25rem 1.5rem 1.125rem',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: '0 1px 3px var(--color-card-shadow, rgba(0,0,0,0.04))',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        boxShadow: 'var(--shadow-card)',
+        transition: 'box-shadow 0.2s ease, transform 0.2s ease',
         cursor: 'default',
       }}
         onMouseOver={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 4px 12px var(--color-card-shadow, rgba(0,0,0,0.08))';
+          e.currentTarget.style.transform = 'translateY(-1px)';
+          e.currentTarget.style.boxShadow = 'var(--shadow-md)';
         }}
         onMouseOut={(e) => {
           e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 1px 3px var(--color-card-shadow, rgba(0,0,0,0.04))';
+          e.currentTarget.style.boxShadow = 'var(--shadow-card)';
         }}
       >
-        {/* Background icon */}
-        <div style={{
-          position: 'absolute', top: 10, right: 12, fontSize: '2rem', opacity: 0.08,
-          pointerEvents: 'none',
-        }}>
-          {s.icon}
-        </div>
-        {/* Color accent top strip */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-          background: s.color ? `linear-gradient(90deg, ${s.color}, ${s.color}80)` : 'transparent',
-          borderRadius: '14px 14px 0 0',
-        }} />
-        <div style={{
-          fontSize: 11, color: 'var(--color-muted, #64748b)', fontWeight: 600,
-          textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8,
-        }}>
-          {s.label}
-        </div>
-        <div style={{
-          fontSize: '2rem', fontWeight: 800, color: s.color ?? 'var(--color-text, #0f172a)',
-          lineHeight: 1, fontFamily: 'monospace',
-        }}>
-          {s.value}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{
+              fontSize: 12, color: 'var(--color-muted)', fontWeight: 500,
+              letterSpacing: '0.01em', marginBottom: 8,
+            }}>
+              {s.label}
+            </div>
+            <div style={{
+              fontSize: '1.75rem', fontWeight: 700, color: s.color ?? 'var(--color-text)',
+              lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+            }}>
+              {s.value}
+            </div>
+          </div>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10,
+            background: s.color ? `${s.color}12` : 'var(--color-primary-bg)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.25rem', flexShrink: 0,
+          }}>
+            {s.icon}
+          </div>
         </div>
         {s.trend && (
-          <div style={{ fontSize: '0.7rem', color: 'var(--color-subtle, #94a3b8)', marginTop: 6 }}>{s.trend}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-subtle)', marginTop: 10 }}>{s.trend}</div>
         )}
+        {/* Bottom accent line */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: 2,
+          background: s.color ? `linear-gradient(90deg, ${s.color}, transparent)` : 'transparent',
+          opacity: 0.5,
+        }} />
       </div>
     ))}
   </div>

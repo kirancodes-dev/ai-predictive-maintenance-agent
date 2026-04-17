@@ -12,6 +12,7 @@ const Header: React.FC = () => {
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === '/') return 'Dashboard';
+    if (path.startsWith('/machines/')) return 'Machine Details';
     return path.slice(1).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
@@ -22,12 +23,17 @@ const Header: React.FC = () => {
     return 'Good evening';
   };
 
+  const getInitials = (name?: string) => {
+    if (!name) return '?';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   return (
     <header className="header">
       <div className="header__title">{getPageTitle()}</div>
       <div className="header__actions">
         {user && (
-          <span style={{ fontSize: '0.75rem', color: '#64748b', marginRight: 4 }}>
+          <span className="header__greeting">
             {getGreeting()}, {user.name?.split(' ')[0]}
           </span>
         )}
@@ -40,9 +46,13 @@ const Header: React.FC = () => {
         </button>
         {user && (
           <div className="header__user">
-            <span className="header__user-name">{user.name}</span>
+            <div className="header__avatar">{getInitials(user.name)}</div>
+            <div className="header__user-info">
+              <span className="header__user-name">{user.name}</span>
+              <span className="header__user-role">{user.role || 'Operator'}</span>
+            </div>
             <button className="header__logout" onClick={logout}>
-              Logout
+              Log out
             </button>
           </div>
         )}

@@ -52,13 +52,13 @@ const DashboardPage: React.FC = () => {
       qc.invalidateQueries('alerts');
     }
     if (type === 'technician_assigned') {
-      toast.success(`👷 ${p.technicianName} auto-dispatched to ${p.machineName}`,
+      toast.success(`${p.technicianName} auto-dispatched to ${p.machineName}`,
         { duration: 6000, id: `ta-${p.machineId}` });
     }
     if (type === 'alert') {
       const sev = p.severity as string;
       const toastFn = sev === 'critical' ? toast.error : toast;
-      toastFn(`🚨 ${p.machineName}: ${p.title}`, {
+      toastFn(`${p.machineName}: ${p.title}`, {
         duration: sev === 'critical' ? 10000 : 5000,
         id: `alert-${p.id}`,
       });
@@ -75,20 +75,22 @@ const DashboardPage: React.FC = () => {
   const criticalMachines = machines.filter((m) => m.riskLevel === 'critical' || m.status === 'critical').length;
 
   const stats = [
-    { label: 'Total Machines', value: machinesData?.total ?? 0, icon: '🏭', color: '#3b82f6' },
-    { label: 'Active Alerts',  value: alerts.length, icon: '🚨',
-      color: alerts.length > 0 ? '#ef4444' : '#22c55e' },
-    { label: 'Online',         value: onlineMachines, icon: '✅', color: '#22c55e' },
-    { label: 'Critical Risk',  value: criticalMachines, icon: '⚠️',
-      color: criticalMachines > 0 ? '#ef4444' : '#22c55e' },
+    { label: 'Total Machines', value: machinesData?.total ?? 0, icon: '🏭', color: '#1a56db' },
+    { label: 'Active Alerts',  value: alerts.length, icon: '🔔',
+      color: alerts.length > 0 ? '#dc2626' : '#059669' },
+    { label: 'Online',         value: onlineMachines, icon: '✓', color: '#059669' },
+    { label: 'Critical Risk',  value: criticalMachines, icon: '⚠',
+      color: criticalMachines > 0 ? '#dc2626' : '#059669' },
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
       <div>
-        <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Operations Dashboard</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
-          Live overview — sensor data refreshes every 5 seconds
+        <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
+          Operations Dashboard
+        </h1>
+        <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
+          Real-time overview of factory operations and equipment health
         </p>
       </div>
 
