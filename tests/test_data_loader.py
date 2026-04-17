@@ -22,4 +22,4 @@ def test_load_historical_data_combines_csv_and_parquet(tmp_path):
     frame = load_historical_data(tmp_path)
 
     assert len(frame) == 2
-    assert set(["a.csv", "b.parquet"]).issubset(set(frame["source_file"]))
+    assert {"a.csv", "b.parquet"}.issubset(set(frame["source_file"]))
