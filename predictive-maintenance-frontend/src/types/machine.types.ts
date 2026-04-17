@@ -1,5 +1,5 @@
-export type MachineStatus = 'online' | 'offline' | 'warning' | 'critical' | 'maintenance';
-
+// ── Machine types ───────────────────────────────────────────────────────────
+export type MachineStatus = 'online' | 'warning' | 'critical' | 'offline' | 'maintenance';
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
 export interface Machine {
@@ -14,21 +14,17 @@ export interface Machine {
   installDate: string;
   nextMaintenanceDate?: string;
   tags: string[];
-  metadata: Record<string, unknown>;
-}
-
-export interface MachineDetail extends Machine {
   description: string;
   manufacturer: string;
   serialNumber: string;
   firmwareVersion: string;
-  sensors: string[];
-  maintenanceHistory: string[];
+  createdAt: string;
 }
 
 export interface MachineListResponse {
-  machines: Machine[];
+  items: Machine[];
   total: number;
   page: number;
-  pageSize: number;
+  limit: number;
+  pages: number;
 }

@@ -6,7 +6,6 @@ from fastapi import WebSocket
 
 class WebSocketManager:
     def __init__(self):
-        # machine_id -> set of websockets
         self.connections: Dict[str, Set[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, machine_id: str):

@@ -1,0 +1,9 @@
+asset_id,vibration,temperature,current,failure_next_24h
+asset-001,0.42,45.3,7.1,0
+asset-001,0.48,47.8,7.5,0
+asset-001,1.94,92.6,16.4,1
+asset-002,0.51,41.3,6.4,0
+asset-002,1.82,88.1,15.1,1
+asset-003,0.34,39.6,5.8,0
+asset-003,2.05,96.4,17.2,1
+asset-003,1.76,85.5,14.6,1

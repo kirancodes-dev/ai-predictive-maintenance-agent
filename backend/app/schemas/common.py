@@ -1,18 +1,17 @@
-from typing import Generic, List, Optional, TypeVar
 from pydantic import BaseModel
+from typing import Optional, List, Generic, TypeVar
 
 T = TypeVar("T")
 
 
-class ApiResponse(BaseModel, Generic[T]):
-    data: T
-    message: Optional[str] = None
+class ApiResponse(BaseModel):
     success: bool = True
+    message: Optional[str] = None
 
 
-class PaginatedResponse(BaseModel, Generic[T]):
-    items: List[T]
+class PaginatedResponse(BaseModel):
+    items: list
     total: int
     page: int
-    pageSize: int
-    totalPages: int
+    limit: int
+    pages: int

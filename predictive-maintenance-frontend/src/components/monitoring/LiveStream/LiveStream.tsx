@@ -1,13 +1,11 @@
 import React, { useMemo } from 'react';
 import { useStreamData } from '../../../hooks/useStreamData';
 import { useBaseline } from '../../../hooks/useBaseline';
-import { SensorChartPanel, CombinedChartPanel } from '../charts';
+import { SensorChartPanel } from '../charts/SensorChart';
+import { CombinedChartPanel } from '../charts/CombinedChart';
 import {
-  KNOWN_SENSOR_TYPES,
-  type KnownSensorType,
-  type SensorChartPoint,
-  type SensorThresholds,
-  buildCombinedLiveData,
+  KNOWN_SENSOR_TYPES, type KnownSensorType, type SensorChartPoint,
+  type SensorThresholds, buildCombinedLiveData,
 } from '../charts/chartConfig';
 import SensorReadings from './SensorReadings';
 
@@ -18,10 +16,8 @@ interface LiveStreamProps {
 
 const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
   const { readings, isConnected, clearReadings } = useStreamData(machineId);
-  const { baseline, isLoading: baselineLoading, overallHealth, computedAt } =
-    useBaseline(machineId);
+  const { baseline, isLoading: baselineLoading, overallHealth, computedAt } = useBaseline(machineId);
 
-  /* Per-type chart data */
   const chartDataByType = useMemo<Record<KnownSensorType, SensorChartPoint[]>>(() => {
     const map = {} as Record<KnownSensorType, SensorChartPoint[]>;
     for (const type of KNOWN_SENSOR_TYPES) {
@@ -32,21 +28,14 @@ const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
     return map;
   }, [readings]);
 
-  /* Thresholds derived from auto-computed baseline (not hardcoded) */
   const thresholdsByType = useMemo<Record<KnownSensorType, SensorThresholds | undefined>>(() => {
     const map = {} as Record<KnownSensorType, SensorThresholds | undefined>;
     for (const type of KNOWN_SENSOR_TYPES) {
       const bl = baseline?.sensors[type];
       map[type] = bl
-        ? {
-            warningMin:  bl.warningMin,
-            warningMax:  bl.warningMax,
-            criticalMin: bl.criticalMin,
-            criticalMax: bl.criticalMax,
-            mean:        bl.mean,
-            trend:       bl.trend,
-            trendPct:    bl.trendPct,
-          }
+        ? { warningMin: bl.warningMin, warningMax: bl.warningMax,
+            criticalMin: bl.criticalMin, criticalMax: bl.criticalMax,
+            mean: bl.mean, trend: bl.trend, trendPct: bl.trendPct }
         : undefined;
     }
     return map;
@@ -55,17 +44,24 @@ const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
   const combinedData = useMemo(() => buildCombinedLiveData(readings), [readings]);
   const totalAnomalies = readings.filter((r) => r.isAnomaly).length;
 
+  const healthColor = overallHealth === null ? '#6b7280'
+    : overallHealth >= 80 ? '#16a34a' : overallHealth >= 60 ? '#d97706' : '#ef4444';
+  const healthBg = overallHealth === null ? '#f3f4f6'
+    : overallHealth >= 80 ? '#f0fdf4' : overallHealth >= 60 ? '#fffbeb' : '#fee2e2';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Status + baseline summary bar */}
+      {/* Status bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 9, height: 9, borderRadius: '50%', display: 'inline-block',
-                         background: isConnected ? '#22c55e' : '#ef4444',
-                         boxShadow: isConnected ? '0 0 8px #22c55e80' : 'none' }} />
+          <span style={{
+            width: 9, height: 9, borderRadius: '50%', display: 'inline-block',
+            background: isConnected ? '#22c55e' : '#ef4444',
+            boxShadow: isConnected ? '0 0 8px #22c55e80' : 'none',
+          }} />
           <span style={{ fontSize: 13, fontWeight: 600 }}>
-            {isConnected ? 'Streaming live' : 'Disconnected'}
+            {isConnected ? 'Streaming live' : 'Reconnecting…'}
             {machineName ? ` — ${machineName}` : ''}
           </span>
           {totalAnomalies > 0 && (
@@ -77,64 +73,64 @@ const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
         </div>
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Auto-baseline health indicator */}
           {overallHealth !== null && !baselineLoading && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6,
-                          background: overallHealth >= 80 ? '#f0fdf4'
-                                    : overallHealth >= 60 ? '#fffbeb' : '#fee2e2',
-                          borderRadius: 10, padding: '4px 12px' }}>
-              <span style={{ fontSize: 12, fontWeight: 600,
-                             color: overallHealth >= 80 ? '#16a34a'
-                                  : overallHealth >= 60 ? '#d97706' : '#ef4444' }}>
+                          background: healthBg, borderRadius: 10, padding: '4px 12px' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: healthColor }}>
                 {overallHealth >= 80 ? '✓' : overallHealth >= 60 ? '⚠' : '✗'} Health {overallHealth}%
               </span>
-              <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
-                auto-baseline
-              </span>
+              <span style={{ fontSize: 10, color: '#94a3b8' }}>auto-baseline</span>
             </div>
           )}
           {baselineLoading && (
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-              Computing baseline…
-            </span>
+            <span style={{ fontSize: 12, color: '#94a3b8' }}>Computing baseline…</span>
           )}
           {computedAt && !baselineLoading && (
-            <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+            <span style={{ fontSize: 11, color: '#94a3b8' }}>
               Baseline: {new Date(computedAt).toLocaleTimeString()}
             </span>
           )}
-          <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-            {readings.length} readings
-          </span>
-          <button onClick={clearReadings}
-            style={{ padding: '4px 12px', fontSize: 12, border: '1px solid var(--color-border)',
-                     borderRadius: 8, background: 'none', cursor: 'pointer' }}>
+          <span style={{ fontSize: 12, color: '#94a3b8' }}>{readings.length} readings</span>
+          <button onClick={clearReadings} style={{
+            padding: '4px 12px', fontSize: 12, border: '1px solid #e2e8f0',
+            borderRadius: 8, background: 'none', cursor: 'pointer',
+          }}>
             Clear
           </button>
         </div>
       </div>
 
-      {/* Current value gauges */}
+      {/* Latest sensor value cards */}
       <SensorReadings readings={readings} />
 
-      {/* 2 × 2 individual sensor charts — thresholds from auto-computed baseline */}
-      <div style={{ display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16 }}>
+      {/* 2 × 2 sensor charts */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))', gap: 20 }}>
         {KNOWN_SENSOR_TYPES.map((type) => (
           <SensorChartPanel
-            key={type}
-            type={type}
-            data={chartDataByType[type]}
-            mode="live"
-            height={220}
-            thresholds={thresholdsByType[type]}
+            key={type} type={type} data={chartDataByType[type]}
+            mode="live" height={300} thresholds={thresholdsByType[type]}
             isLoading={baselineLoading}
           />
         ))}
       </div>
 
-      {/* Combined overview */}
-      <CombinedChartPanel data={combinedData} mode="live" height={260} />
+      {/* Combined normalized overview */}
+      <CombinedChartPanel data={combinedData} mode="live" height={340} isLoading={false} />
+
+      {/* Threshold legend */}
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11,
+                    color: '#94a3b8', paddingLeft: 4 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ display: 'inline-block', width: 18, height: 2, background: '#f59e0b',
+                         borderTop: '2px dashed #f59e0b' }} />
+          Warning threshold
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ display: 'inline-block', width: 18, height: 2, background: '#ef4444',
+                         borderTop: '2px dashed #ef4444' }} />
+          Critical threshold
+        </span>
+      </div>
     </div>
   );
 };

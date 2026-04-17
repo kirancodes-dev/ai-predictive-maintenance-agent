@@ -1,42 +1,72 @@
-import React from 'react';
-import type { SensorReading } from '../../../types/sensor.types';
-import { formatNumber } from '../../../utils/formatters';
+import React, { useMemo } from 'react';
+import { SENSOR_CONFIG, KNOWN_SENSOR_TYPES, type KnownSensorType } from '../charts/chartConfig';
+import type { SensorReading } from '../../../hooks/useStreamData';
 
-interface SensorReadingsProps {
+interface Props {
   readings: SensorReading[];
 }
 
-const SensorReadings: React.FC<SensorReadingsProps> = ({ readings }) => {
-  const latest = readings.reduce<Record<string, SensorReading>>((acc, r) => {
-    acc[r.sensorId] = r;
-    return acc;
-  }, {});
+const SensorReadings: React.FC<Props> = ({ readings }) => {
+  const latest = useMemo<Record<KnownSensorType, SensorReading | undefined>>(() => {
+    const map = {} as Record<KnownSensorType, SensorReading | undefined>;
+    for (const r of readings) {
+      if (KNOWN_SENSOR_TYPES.includes(r.type as KnownSensorType)) {
+        map[r.type as KnownSensorType] = r;
+      }
+    }
+    return map;
+  }, [readings]);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem' }}>
-      {Object.values(latest).map(reading => (
-        <div
-          key={reading.sensorId}
-          style={{
-            background: reading.isAnomaly ? '#fee2e2' : 'var(--color-bg-secondary)',
-            border: `1px solid ${reading.isAnomaly ? '#ef4444' : 'var(--color-border)'}`,
-            borderRadius: 'var(--radius-md)',
-            padding: '0.75rem',
-          }}
-        >
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-            {reading.type.toUpperCase()}
-          </div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-            {formatNumber(reading.value)} {reading.unit}
-          </div>
-          {reading.isAnomaly && (
-            <div style={{ fontSize: '0.6875rem', color: '#ef4444', fontWeight: 600, marginTop: 2 }}>
-              ⚠ Anomaly detected
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+      {KNOWN_SENSOR_TYPES.map((type) => {
+        const r = latest[type];
+        const cfg = SENSOR_CONFIG[type];
+        const [dMin, dMax] = cfg.domain;
+        const pct = r ? Math.max(0, Math.min(100, ((r.value - dMin) / (dMax - dMin)) * 100)) : 0;
+        const isHot = pct > 80;
+        const isWarm = pct > 60 && !isHot;
+        const statusColor = !r ? '#94a3b8' : isHot ? '#ef4444' : isWarm ? '#f59e0b' : cfg.color;
+
+        return (
+          <div key={type} style={{
+            background: '#fff', borderRadius: 12, padding: '14px 16px',
+            border: `1.5px solid ${r?.isAnomaly ? '#fca5a5' : '#e2e8f0'}`,
+            boxShadow: r?.isAnomaly ? '0 0 0 2px #fee2e233' : '0 1px 3px rgba(0,0,0,0.05)',
+            transition: 'border-color 0.3s',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontSize: 16 }}>{cfg.icon}</span>
+                {cfg.label}
+              </span>
+              {r?.isAnomaly && (
+                <span style={{ fontSize: 10, background: '#fee2e2', color: '#ef4444',
+                               borderRadius: 8, padding: '1px 6px', fontWeight: 700 }}>
+                  ⚠ ANOMALY
+                </span>
+              )}
             </div>
-          )}
-        </div>
-      ))}
+            <div style={{ fontSize: 26, fontWeight: 700, color: statusColor, lineHeight: 1, marginBottom: 6 }}>
+              {r ? r.value.toFixed(2) : '—'}
+              <span style={{ fontSize: 12, fontWeight: 500, marginLeft: 4, color: '#94a3b8' }}>
+                {cfg.unit}
+              </span>
+            </div>
+            {/* Progress bar */}
+            <div style={{ height: 4, borderRadius: 4, background: '#f1f5f9', overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', width: `${pct}%`,
+                background: statusColor, borderRadius: 4,
+                transition: 'width 0.4s ease, background 0.3s ease',
+              }} />
+            </div>
+            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+              {r ? `${pct.toFixed(0)}% of range` : 'No data'}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

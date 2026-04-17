@@ -263,6 +263,7 @@ async def get_baseline(
     return {"data": result, "success": True, "cached": False}
 
 
+@router.get("/{machine_id}/latest")
 @router.get("/{machine_id}/live")
 async def get_live_data(
     machine_id: str,
@@ -330,7 +331,10 @@ async def get_history(
                 SensorDataPoint(timestamp=r["timestamp"], value=float(r[field]))
                 for r in sim_readings if field in r
             ]
-            histories.append(SensorHistoryOut(sensorId=sensor.id, data=data_points))
+            histories.append(SensorHistoryOut(
+                sensorId=sensor.id, machineId=machine_id,
+                type=sensor.type, unit=sensor.unit, data=data_points,
+            ))
     else:
         for sensor in sensors:
             lo, hi = _FALLBACK_RANGES.get(sensor.type, (0.0, 100.0))
@@ -341,6 +345,9 @@ async def get_history(
                 )
                 for i in range(limit)
             ]
-            histories.append(SensorHistoryOut(sensorId=sensor.id, data=data_points))
+            histories.append(SensorHistoryOut(
+                sensorId=sensor.id, machineId=machine_id,
+                type=sensor.type, unit=sensor.unit, data=data_points,
+            ))
 
     return {"data": histories, "success": True}

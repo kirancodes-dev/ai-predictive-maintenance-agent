@@ -1,25 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { useHistoricalData } from '../../../hooks/useHistoricalData';
 import { useBaseline } from '../../../hooks/useBaseline';
-import { SensorChartPanel, CombinedChartPanel } from '../charts';
+import { SensorChartPanel } from '../charts/SensorChart';
+import { CombinedChartPanel } from '../charts/CombinedChart';
 import {
-  SENSOR_CONFIG,
-  KNOWN_SENSOR_TYPES,
-  type KnownSensorType,
-  type SensorChartPoint,
-  type SensorThresholds,
-  getSensorTypeFromId,
-  buildCombinedHistoryData,
+  SENSOR_CONFIG, KNOWN_SENSOR_TYPES, type KnownSensorType,
+  type SensorChartPoint, type SensorThresholds,
+  getSensorTypeFromId, buildCombinedHistoryData,
 } from '../charts/chartConfig';
 
-/* ── Time preset helper ─────────────────────────────────── */
-interface Preset {
-  label: string;
-  minutes: number;
-}
+interface Preset { label: string; minutes: number; }
 
 const PRESETS: Preset[] = [
-  { label: '15 m', minutes: 15 },
   { label: '1 h', minutes: 60 },
   { label: '6 h', minutes: 360 },
   { label: '24 h', minutes: 1440 },
@@ -33,50 +25,10 @@ const makeRange = (minutes: number) => {
   return { from: from.toISOString().slice(0, 16), to: to.toISOString().slice(0, 16) };
 };
 
-/* ── CSV export ─────────────────────────────────────────── */
-const exportCsv = (
-  histories: Array<{ sensorId: string; data: Array<{ timestamp: string; value: number }> }>,
-  machineId: string,
-) => {
-  if (!histories.length) return;
+interface Props { machineId: string; machineName?: string; }
 
-  // Build a combined row per timestamp
-  const typeMap = new Map<
-    KnownSensorType,
-    Array<{ timestamp: string; value: number }>
-  >();
-  for (const h of histories) {
-    const type = getSensorTypeFromId(h.sensorId);
-    if (type) typeMap.set(type, h.data);
-  }
-
-  const maxLen = Math.max(...[...typeMap.values()].map((d) => d.length), 0);
-  const rows: string[] = ['timestamp,temperature_C,vibration_mm_s,rpm,current_A'];
-  for (let i = 0; i < maxLen; i++) {
-    const ts = typeMap.get('temperature')?.[i]?.timestamp ?? '';
-    const cols = KNOWN_SENSOR_TYPES.map(
-      (t) => typeMap.get(t)?.[i]?.value?.toFixed(3) ?? '',
-    );
-    rows.push([ts, ...cols].join(','));
-  }
-
-  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${machineId}_sensor_history_${Date.now()}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-/* ── Main component ─────────────────────────────────────── */
-interface HistoryViewProps {
-  machineId: string;
-  machineName?: string;
-}
-
-const HistoryView: React.FC<HistoryViewProps> = ({ machineId, machineName }) => {
-  const [activePreset, setActivePreset] = useState<number>(1440); // 24h default
+const HistoryView: React.FC<Props> = ({ machineId, machineName }) => {
+  const [activePreset, setActivePreset] = useState(1440);
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [useCustom, setUseCustom] = useState(false);
@@ -89,7 +41,6 @@ const HistoryView: React.FC<HistoryViewProps> = ({ machineId, machineName }) => 
   const { data: histories, isLoading, isError } = useHistoricalData(machineId, range);
   const { baseline, isLoading: baselineLoading, overallHealth } = useBaseline(machineId);
 
-  /* Per-type chart data */
   const chartDataByType = useMemo<Record<KnownSensorType, SensorChartPoint[]>>(() => {
     const map = {} as Record<KnownSensorType, SensorChartPoint[]>;
     for (const type of KNOWN_SENSOR_TYPES) {
@@ -99,7 +50,6 @@ const HistoryView: React.FC<HistoryViewProps> = ({ machineId, machineName }) => 
     return map;
   }, [histories]);
 
-  /* Auto-computed thresholds — no manual config */
   const thresholdsByType = useMemo<Record<KnownSensorType, SensorThresholds | undefined>>(() => {
     const map = {} as Record<KnownSensorType, SensorThresholds | undefined>;
     for (const type of KNOWN_SENSOR_TYPES) {
@@ -113,164 +63,116 @@ const HistoryView: React.FC<HistoryViewProps> = ({ machineId, machineName }) => 
     return map;
   }, [baseline]);
 
-  /* Combined chart data */
-  const combinedData = useMemo(
-    () => buildCombinedHistoryData(histories ?? []),
-    [histories],
-  );
-
+  const combinedData = useMemo(() => buildCombinedHistoryData(histories ?? []), [histories]);
   const dataPoints = histories?.[0]?.data.length ?? 0;
+
+  const healthColor = overallHealth === null ? '#6b7280'
+    : overallHealth >= 80 ? '#16a34a' : overallHealth >= 60 ? '#d97706' : '#ef4444';
+  const healthBg = overallHealth === null ? '#f3f4f6'
+    : overallHealth >= 80 ? '#f0fdf4' : overallHealth >= 60 ? '#fffbeb' : '#fee2e2';
+
+  const exportCsv = () => {
+    if (!histories?.length) return;
+    const typeMap = new Map<KnownSensorType, Array<{ timestamp: string; value: number }>>();
+    for (const h of histories) {
+      const t = getSensorTypeFromId(h.sensorId);
+      if (t) typeMap.set(t, h.data);
+    }
+    const maxLen = Math.max(...[...typeMap.values()].map((d) => d.length), 0);
+    const rows = ['timestamp,temperature_C,vibration_mm_s,rpm,current_A'];
+    for (let i = 0; i < maxLen; i++) {
+      const ts = typeMap.get('temperature')?.[i]?.timestamp ?? '';
+      const cols = KNOWN_SENSOR_TYPES.map((t) => typeMap.get(t)?.[i]?.value?.toFixed(3) ?? '');
+      rows.push([ts, ...cols].join(','));
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([rows.join('\n')], { type: 'text/csv' }));
+    a.download = `${machineId}_history_${Date.now()}.csv`;
+    a.click();
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
                     flexWrap: 'wrap', gap: 12 }}>
-        {/* Preset buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {PRESETS.map((p) => (
-              <button
-                key={p.minutes}
+              <button key={p.minutes}
                 onClick={() => { setActivePreset(p.minutes); setUseCustom(false); }}
                 style={{
                   padding: '5px 14px', fontSize: 12, fontWeight: 600, borderRadius: 8,
-                  border: '1px solid var(--color-border)',
-                  background: !useCustom && activePreset === p.minutes
-                    ? 'var(--color-primary)' : 'none',
-                  color: !useCustom && activePreset === p.minutes
-                    ? '#fff' : 'var(--color-text-secondary)',
-                  cursor: 'pointer', transition: 'all 0.15s',
-                }}
-              >
+                  border: '1px solid #e2e8f0', cursor: 'pointer', transition: 'all 0.15s',
+                  background: !useCustom && activePreset === p.minutes ? '#3b82f6' : 'none',
+                  color: !useCustom && activePreset === p.minutes ? '#fff' : '#64748b',
+                }}>
                 {p.label}
               </button>
             ))}
           </div>
-
-          {/* Custom range */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <label style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Custom:</label>
-            <input
-              type="datetime-local"
-              value={customFrom}
+            <label style={{ fontSize: 12, color: '#94a3b8' }}>Custom:</label>
+            <input type="datetime-local" value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
-              style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--color-border)',
-                       borderRadius: 6 }}
-            />
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>→</span>
-            <input
-              type="datetime-local"
-              value={customTo}
+              style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6 }} />
+            <span style={{ fontSize: 12, color: '#94a3b8' }}>→</span>
+            <input type="datetime-local" value={customTo}
               onChange={(e) => setCustomTo(e.target.value)}
-              style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--color-border)',
-                       borderRadius: 6 }}
-            />
+              style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6 }} />
             <button
               onClick={() => { if (customFrom && customTo) setUseCustom(true); }}
               disabled={!customFrom || !customTo}
-              style={{ padding: '4px 12px', fontSize: 12, borderRadius: 6,
-                       border: '1px solid var(--color-primary)', background: 'none',
-                       color: 'var(--color-primary)', cursor: 'pointer' }}
-            >
+              style={{ padding: '4px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #3b82f6',
+                       background: 'none', color: '#3b82f6', cursor: 'pointer' }}>
               Apply
             </button>
           </div>
         </div>
 
-        {/* Right side: baseline health + info + export */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           {overallHealth !== null && !baselineLoading && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 6, borderRadius: 10,
-              padding: '4px 12px',
-              background: overallHealth >= 80 ? '#f0fdf4' : overallHealth >= 60 ? '#fffbeb' : '#fee2e2',
-            }}>
-              <span style={{ fontSize: 12, fontWeight: 600,
-                color: overallHealth >= 80 ? '#16a34a' : overallHealth >= 60 ? '#d97706' : '#ef4444' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6,
+                          background: healthBg, borderRadius: 10, padding: '4px 12px' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: healthColor }}>
                 {overallHealth >= 80 ? '✓' : overallHealth >= 60 ? '⚠' : '✗'} Health {overallHealth}%
               </span>
-              <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>auto-baseline</span>
             </div>
           )}
-          {baselineLoading && (
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-              Computing baseline…
-            </span>
-          )}
           {!isLoading && dataPoints > 0 && (
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-              {dataPoints.toLocaleString()} pts
-            </span>
+            <span style={{ fontSize: 12, color: '#94a3b8' }}>{dataPoints.toLocaleString()} pts</span>
           )}
-          <button
-            onClick={() => histories && exportCsv(histories, machineName ?? machineId)}
-            disabled={!histories?.length}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '6px 14px', fontSize: 12, fontWeight: 600,
-              border: '1px solid var(--color-border)', borderRadius: 8,
-              background: 'none', cursor: 'pointer',
-              color: histories?.length ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-              opacity: histories?.length ? 1 : 0.5,
-            }}
-          >
+          <button onClick={exportCsv} disabled={!histories?.length}
+            style={{ padding: '6px 14px', fontSize: 12, fontWeight: 600,
+                     border: '1px solid #e2e8f0', borderRadius: 8, background: 'none',
+                     cursor: 'pointer', opacity: histories?.length ? 1 : 0.5 }}>
             ↓ CSV
           </button>
         </div>
       </div>
 
-      {/* Error state */}
       {isError && (
         <div style={{ padding: '12px 16px', background: '#fee2e2', borderRadius: 8,
                       color: '#ef4444', fontSize: 13 }}>
-          Failed to load historical data. Ensure the simulation server is running.
+          Failed to load history. Ensure the simulation server is running.
         </div>
       )}
 
-      {/* 2 × 2 individual sensor charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-                    gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))', gap: 20 }}>
         {KNOWN_SENSOR_TYPES.map((type) => (
-          <SensorChartPanel
-            key={type}
-            type={type}
-            data={chartDataByType[type]}
-            mode="history"
-            height={240}
-            showBrush
-            thresholds={thresholdsByType[type]}
-            isLoading={isLoading || baselineLoading}
-          />
+          <SensorChartPanel key={type} type={type} data={chartDataByType[type]}
+            mode="history" height={320} showBrush thresholds={thresholdsByType[type]}
+            isLoading={isLoading || baselineLoading} />
         ))}
       </div>
 
-      {/* Combined overview */}
-      <CombinedChartPanel
-        data={combinedData}
-        mode="history"
-        height={300}
-        showBrush
-        isLoading={isLoading}
-      />
+      <CombinedChartPanel data={combinedData} mode="history" height={380} showBrush isLoading={isLoading} />
 
-      {/* Legend for threshold lines */}
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11,
-                    color: 'var(--color-text-muted)', paddingLeft: 4 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ display: 'inline-block', width: 20, height: 2,
-                         background: '#f59e0b', borderTop: '2px dashed #f59e0b' }} />
-          Warning threshold
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ display: 'inline-block', width: 20, height: 2,
-                         background: '#ef4444', borderTop: '2px dashed #ef4444' }} />
-          Critical threshold
-        </span>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11, color: '#94a3b8', paddingLeft: 4 }}>
         {KNOWN_SENSOR_TYPES.map((t) => (
           <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
-                           background: SENSOR_CONFIG[t].color }} />
+            <span style={{ width: 10, height: 10, borderRadius: '50%',
+                           background: SENSOR_CONFIG[t].color, display: 'inline-block' }} />
             {SENSOR_CONFIG[t].label}
           </span>
         ))}

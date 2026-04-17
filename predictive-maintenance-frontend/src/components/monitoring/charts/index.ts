@@ -1,3 +1,3 @@
-export { default as SensorChart, SensorChartPanel } from './SensorChart';
-export { default as CombinedChart, CombinedChartPanel } from './CombinedChart';
+export { SensorChartPanel, default as SensorChart } from './SensorChart';
+export { CombinedChartPanel, default as CombinedChart } from './CombinedChart';
 export * from './chartConfig';

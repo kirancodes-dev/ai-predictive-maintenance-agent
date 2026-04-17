@@ -1,281 +1,181 @@
 import React, { useState, useMemo } from 'react';
 import {
-  ComposedChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine,
-  Brush,
+  ComposedChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, ReferenceLine, Legend,
 } from 'recharts';
-import {
-  SENSOR_CONFIG,
-  KNOWN_SENSOR_TYPES,
-  type KnownSensorType,
-  type CombinedDataPoint,
-  thinData,
-} from './chartConfig';
+import { SENSOR_CONFIG, KNOWN_SENSOR_TYPES, type CombinedDataPoint, thinData } from './chartConfig';
+
+type ViewMode = 'normalized' | 'raw';
 
 interface CombinedChartProps {
   data: CombinedDataPoint[];
   mode: 'live' | 'history';
   height?: number;
   showBrush?: boolean;
+  isLoading?: boolean;
 }
 
-/* ── Custom tooltip ─────────────────────────────────────── */
 const CombinedTooltip = ({
-  active,
-  payload,
-  label,
+  active, payload, label,
 }: {
   active?: boolean;
   payload?: Array<{ name: string; value: number; color: string }>;
   label?: string;
 }) => {
   if (!active || !payload?.length) return null;
-
-  const tsLabel = (() => {
-    try {
-      const d = new Date(label ?? '');
-      return d.toLocaleString([], {
-        month: 'short', day: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-      });
-    } catch {
-      return label ?? '';
-    }
-  })();
-
   return (
-    <div
-      style={{
-        background: 'var(--color-surface)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 8,
-        padding: '10px 14px',
-        fontSize: 12,
-        boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-        minWidth: 180,
-      }}
-    >
-      <div style={{ color: 'var(--color-text-muted)', marginBottom: 6, fontSize: 11 }}>
-        {tsLabel}
-      </div>
-      {payload.map((p) => {
-        const type = (p.name.replace('_pct', '') as KnownSensorType);
-        const cfg = SENSOR_CONFIG[type];
-        return (
-          <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between',
-                                     gap: 16, marginBottom: 3 }}>
-            <span style={{ color: p.color, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span>{cfg?.icon ?? ''}</span>
-              <span>{cfg?.label ?? p.name}</span>
-            </span>
-            <strong style={{ color: p.color }}>{Number(p.value).toFixed(1)}%</strong>
-          </div>
-        );
-      })}
-      <div style={{ borderTop: '1px solid var(--color-border)', marginTop: 6, paddingTop: 5,
-                    fontSize: 10, color: 'var(--color-text-muted)' }}>
-        % of operational range
-      </div>
+    <div style={{
+      background: 'var(--color-tooltip-bg, #fff)', border: '1px solid var(--color-tooltip-border, #e2e8f0)', borderRadius: 8,
+      padding: '8px 12px', fontSize: 11, boxShadow: '0 4px 12px var(--color-card-shadow, rgba(0,0,0,0.1))',
+      minWidth: 160, color: 'var(--color-text, #0f172a)',
+    }}>
+      <div style={{ color: 'var(--color-subtle, #888)', marginBottom: 6, fontSize: 10 }}>{label}</div>
+      {payload.map((p) => (
+        <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between',
+                                    alignItems: 'center', gap: 12, marginBottom: 2 }}>
+          <span style={{ color: p.color, fontWeight: 600 }}>{p.name}</span>
+          <span style={{ fontWeight: 700 }}>{p.value.toFixed(1)}%</span>
+        </div>
+      ))}
     </div>
   );
 };
 
-/* ── Legend renderer ────────────────────────────────────── */
-const renderLegend = (
-  props: { payload?: Array<{ value: string; color: string }> },
-  hidden: Set<string>,
-  toggle: (key: string) => void,
-) => {
-  return (
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center',
-                  padding: '4px 0', marginTop: 4 }}>
-      {(props.payload ?? []).map((entry) => {
-        const type = entry.value.replace('_pct', '') as KnownSensorType;
-        const cfg = SENSOR_CONFIG[type];
-        const isHidden = hidden.has(entry.value);
-        return (
-          <button
-            key={entry.value}
-            onClick={() => toggle(entry.value)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-              background: 'none', border: '1px solid var(--color-border)', borderRadius: 20,
-              padding: '3px 10px', fontSize: 12, fontWeight: 500,
-              opacity: isHidden ? 0.35 : 1,
-              color: isHidden ? 'var(--color-text-muted)' : entry.color,
-              transition: 'opacity 0.2s',
-            }}
-          >
-            <span style={{ width: 10, height: 10, borderRadius: '50%',
-                           background: isHidden ? 'var(--color-border)' : entry.color,
-                           display: 'inline-block', flexShrink: 0 }} />
-            {cfg?.icon} {cfg?.label ?? type}
-          </button>
-        );
-      })}
-    </div>
-  );
-};
-
-/* ── Main component ─────────────────────────────────────── */
-const CombinedChart: React.FC<CombinedChartProps> = ({
-  data,
-  mode,
-  height = 280,
-  showBrush = false,
+export const CombinedChartPanel: React.FC<CombinedChartProps> = ({
+  data, mode, height = 280, isLoading = false,
 }) => {
   const [hidden, setHidden] = useState<Set<string>>(new Set());
-
-  const toggle = (key: string) =>
-    setHidden((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-
+  const [viewMode, setViewMode] = useState<ViewMode>('normalized');
   const displayData = useMemo(() => thinData(data, 300), [data]);
 
-  const tickFormatter = (ts: string) => {
+  const tickFmt = (ts: string) => {
     try {
       const d = new Date(ts);
       return mode === 'live'
         ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-        : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    } catch {
-      return ts.slice(11, 16);
-    }
+        : d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' +
+          d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch { return ts.slice(11, 16); }
   };
+
+  const toggle = (key: string) =>
+    setHidden((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+
+  if (isLoading) {
+    return (
+      <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#94a3b8', fontSize: 13 }}>
+        Loading…
+      </div>
+    );
+  }
 
   if (!displayData.length) {
     return (
       <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--color-text-muted)', fontSize: 13 }}>
-        Waiting for combined data…
+                    color: '#94a3b8', fontSize: 13 }}>
+        Waiting for data…
       </div>
     );
   }
 
   return (
-    <div style={{ width: '100%' }}>
-      <ResponsiveContainer width="100%" height={height}>
-        <ComposedChart
-          data={displayData}
-          margin={{ top: 8, right: 16, left: 0, bottom: showBrush ? 24 : 4 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.5} />
-          <XAxis
-            dataKey="timestamp"
-            tickFormatter={tickFormatter}
-            tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }}
-            tickLine={false}
-            axisLine={false}
-            interval="preserveStartEnd"
-          />
-          <YAxis
-            domain={[0, 110]}
-            tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }}
-            tickLine={false}
-            axisLine={false}
-            width={38}
-            tickFormatter={(v: number) => `${v}%`}
-          />
-          <Tooltip content={<CombinedTooltip />} />
-          <Legend
-            content={(props) =>
-              renderLegend(
-                props as Parameters<typeof renderLegend>[0],
-                hidden,
-                toggle,
-              )
-            }
-          />
-
-          {/* Warning (75%) and critical (100%) bands */}
-          <ReferenceLine y={75} stroke="#f59e0b" strokeDasharray="5 3" strokeWidth={1}
-            label={{ value: 'Warn 75%', position: 'insideTopRight', fontSize: 9, fill: '#f59e0b' }} />
-          <ReferenceLine y={100} stroke="#ef4444" strokeDasharray="5 3" strokeWidth={1}
-            label={{ value: 'Crit 100%', position: 'insideTopRight', fontSize: 9, fill: '#ef4444' }} />
-
-          {KNOWN_SENSOR_TYPES.map((type) => {
-            const key = `${type}_pct`;
-            const cfg = SENSOR_CONFIG[type];
+    <div style={{
+      background: 'var(--color-surface, #fff)', borderRadius: 12, padding: '16px 20px',
+      border: '1px solid var(--color-border, #e2e8f0)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div>
+          <span style={{ fontWeight: 700, fontSize: 14 }}>Combined Sensor View</span>
+          <span style={{ fontSize: 11, color: 'var(--color-muted, #94a3b8)', marginLeft: 8 }}>
+            {viewMode === 'normalized' ? 'normalized 0–100% of display range' : 'raw sensor values'}
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Raw / Normalized toggle */}
+          <div style={{
+            display: 'flex', borderRadius: 8, overflow: 'hidden',
+            border: '1px solid var(--color-border, #e2e8f0)',
+          }}>
+            {(['normalized', 'raw'] as ViewMode[]).map((m) => (
+              <button key={m} onClick={() => setViewMode(m)} style={{
+                padding: '3px 10px', fontSize: 11, fontWeight: 600,
+                border: 'none', cursor: 'pointer',
+                background: viewMode === m ? 'var(--color-primary, #3b82f6)' : 'transparent',
+                color: viewMode === m ? '#fff' : 'var(--color-muted, #94a3b8)',
+                transition: 'all 0.15s',
+              }}>
+                {m === 'normalized' ? '% Norm' : 'Raw'}
+              </button>
+            ))}
+          </div>
+          {KNOWN_SENSOR_TYPES.map((t) => {
+            const cfg = SENSOR_CONFIG[t];
+            const isHidden = hidden.has(t);
             return (
-              <Line
-                key={key}
-                type="monotone"
-                dataKey={key}
-                stroke={cfg.color}
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4, stroke: cfg.color, strokeWidth: 2, fill: '#fff' }}
-                name={key}
-                hide={hidden.has(key)}
-                isAnimationActive={false}
-                connectNulls
-              />
+              <button
+                key={t}
+                onClick={() => toggle(t)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px',
+                  borderRadius: 20, border: `1.5px solid ${isHidden ? 'var(--color-border, #e2e8f0)' : cfg.color}`,
+                  background: isHidden ? 'transparent' : `${cfg.color}18`,
+                  color: isHidden ? 'var(--color-muted, #94a3b8)' : cfg.color,
+                  cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                  transition: 'all 0.15s',
+                }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: '50%',
+                               background: isHidden ? '#cbd5e1' : cfg.color,
+                               display: 'inline-block' }} />
+                {cfg.label}
+              </button>
             );
           })}
+        </div>
+      </div>
 
-          {showBrush && (
-            <Brush dataKey="timestamp" height={20} travellerWidth={6}
-              tickFormatter={tickFormatter} stroke="#6366f1" fill="var(--color-surface)" />
+      <ResponsiveContainer width="100%" height={height}>
+        <ComposedChart data={displayData} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #e2e8f0)" opacity={0.6} />
+          <XAxis dataKey="timestamp" tickFormatter={tickFmt}
+            tick={{ fontSize: 10, fill: 'var(--color-muted, #94a3b8)' }} tickLine={false} axisLine={false}
+            interval="preserveStartEnd" />
+          {viewMode === 'normalized' ? (
+            <YAxis domain={[0, 100]} width={40}
+              tick={{ fontSize: 10, fill: 'var(--color-muted, #94a3b8)' }} tickLine={false} axisLine={false}
+              tickFormatter={(v: number) => `${v}%`} />
+          ) : (
+            <YAxis width={50}
+              tick={{ fontSize: 10, fill: 'var(--color-muted, #94a3b8)' }} tickLine={false} axisLine={false} />
           )}
+          <Tooltip content={<CombinedTooltip />} />
+          {viewMode === 'normalized' && (
+            <>
+              <ReferenceLine y={60} stroke="#f59e0b" strokeDasharray="4 3" strokeWidth={1}
+                label={{ value: 'Warn', position: 'insideTopRight', fontSize: 9, fill: '#f59e0b' }} />
+              <ReferenceLine y={80} stroke="#ef4444" strokeDasharray="4 3" strokeWidth={1}
+                label={{ value: 'Crit', position: 'insideTopRight', fontSize: 9, fill: '#ef4444' }} />
+            </>
+          )}
+          {KNOWN_SENSOR_TYPES.map((t) => {
+            const cfg = SENSOR_CONFIG[t];
+            const dataKey = viewMode === 'normalized' ? `${t}_pct` : t;
+            return hidden.has(t) ? null : (
+              <Line key={t} type="monotone" dataKey={dataKey}
+                name={cfg.label} stroke={cfg.color} strokeWidth={2.5}
+                dot={false} isAnimationActive={false}
+                activeDot={{ r: 4, stroke: cfg.color, strokeWidth: 2, fill: '#fff' }} />
+            );
+          })}
         </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
 };
 
-/* ── Panel wrapper ──────────────────────────────────────── */
-interface CombinedChartPanelProps extends CombinedChartProps {
-  isLoading?: boolean;
-}
-
-export const CombinedChartPanel: React.FC<CombinedChartPanelProps> = ({
-  isLoading,
-  ...props
-}) => (
-  <div
-    style={{
-      background: 'var(--color-surface)',
-      border: '1px solid var(--color-border)',
-      borderRadius: 12,
-      padding: '16px 20px',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-    }}
-  >
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  marginBottom: 12 }}>
-      <div>
-        <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-text-primary)' }}>
-          Combined Sensor Overview
-        </span>
-        <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginLeft: 8 }}>
-          All sensors · % of operational range
-        </span>
-      </div>
-      <span style={{ fontSize: 11, color: 'var(--color-text-muted)',
-                     background: 'var(--color-bg-secondary)', borderRadius: 8, padding: '2px 8px' }}>
-        Click legend to toggle
-      </span>
-    </div>
-    {isLoading ? (
-      <div style={{ height: props.height ?? 280, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
-        Loading…
-      </div>
-    ) : (
-      <CombinedChart {...props} />
-    )}
-  </div>
-);
-
-export default CombinedChart;
+export default CombinedChartPanel;

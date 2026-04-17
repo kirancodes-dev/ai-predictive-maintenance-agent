@@ -1,66 +1,181 @@
 @import './variables.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html {
-  font-size: 16px;
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  font-family: var(--font-sans);
-  color: var(--color-text-primary);
-  background-color: var(--color-bg);
-  line-height: 1.5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background 0.2s var(--transition), color 0.2s var(--transition);
 }
 
-a {
-  color: var(--color-primary);
-  text-decoration: none;
+::selection {
+  background: var(--color-primary);
+  color: #fff;
 }
 
-a:hover {
-  text-decoration: underline;
+input, button, textarea, select { font: inherit; }
+
+/* Styled scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-muted); }
+
+/* Focus visible for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
-button {
-  cursor: pointer;
-  font-family: inherit;
+/* Smooth transitions for interactive elements */
+a { color: var(--color-primary); text-decoration: none; transition: color var(--transition); }
+a:hover { color: var(--color-primary-light); }
+
+button { transition: all var(--transition); }
+button:active { transform: scale(0.97); }
+
+/* ── Card utility ── */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card:hover {
+  box-shadow: var(--shadow-md);
 }
 
-input,
-textarea,
-select {
-  font-family: inherit;
+/* ── Badge utility ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
-img {
-  max-width: 100%;
-  display: block;
+/* ── Section title utility ── */
+.section-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
 }
 
-#root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+.section-subtitle {
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+  font-weight: 400;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+/* ── Dark mode overrides for inline-styled components ── */
+[data-theme="dark"] div[style*="background: #fff"],
+[data-theme="dark"] div[style*="background: '#fff'"],
+[data-theme="dark"] div[style*="background: rgb(255, 255, 255)"] {
+  background: var(--color-surface) !important;
+}
+
+[data-theme="dark"] div[style*="background: #f8fafc"],
+[data-theme="dark"] div[style*="background: '#f8fafc'"],
+[data-theme="dark"] div[style*="background: #f3f4f6"],
+[data-theme="dark"] div[style*="background: '#f3f4f6'"],
+[data-theme="dark"] div[style*="background: #f0f2f5"],
+[data-theme="dark"] div[style*="background: #f1f5f9"] {
+  background: var(--color-surface) !important;
+}
+
+[data-theme="dark"] div[style*="border: 1px solid #e2e8f0"],
+[data-theme="dark"] div[style*="border: 1px solid #dfe3e8"],
+[data-theme="dark"] div[style*="border: 1.5px solid #e2e8f0"],
+[data-theme="dark"] div[style*="border: 1px solid #e5e7eb"] {
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] span[style*="color: #94a3b8"],
+[data-theme="dark"] div[style*="color: #94a3b8"],
+[data-theme="dark"] p[style*="color: #94a3b8"],
+[data-theme="dark"] label[style*="color: #94a3b8"] {
+  color: var(--color-muted) !important;
+}
+
+[data-theme="dark"] span[style*="color: #64748b"],
+[data-theme="dark"] div[style*="color: #64748b"],
+[data-theme="dark"] span[style*="color: #6b7280"],
+[data-theme="dark"] div[style*="color: #6b7280"],
+[data-theme="dark"] p[style*="color: #64748b"],
+[data-theme="dark"] p[style*="color: #6b7280"] {
+  color: var(--color-muted) !important;
+}
+
+[data-theme="dark"] input[style*="border: 1px solid #e2e8f0"],
+[data-theme="dark"] input[style*="border: 1px solid #d1d5db"] {
+  background: var(--color-input-bg) !important;
+  border-color: var(--color-input-border) !important;
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] button[style*="border: 1px solid #e2e8f0"],
+[data-theme="dark"] button[style*="border: 1px solid #e5e7eb"] {
+  border-color: var(--color-border) !important;
+  color: var(--color-muted) !important;
+}
+
+[data-theme="dark"] div[style*="background: #e2e8f0"],
+[data-theme="dark"] div[style*="background: '#e2e8f0'"],
+[data-theme="dark"] div[style*="background: #dfe3e8"] {
+  background: var(--color-border) !important;
+}
+
+[data-theme="dark"] div[style*="color: #0f172a"],
+[data-theme="dark"] span[style*="color: #0f172a"],
+[data-theme="dark"] div[style*="color: #1a1d21"],
+[data-theme="dark"] span[style*="color: #1a1d21"] {
+  color: var(--color-text) !important;
+}
+
+/* Recharts dark mode support */
+[data-theme="dark"] .recharts-cartesian-grid line {
+  stroke: #1f2937 !important;
+}
+[data-theme="dark"] .recharts-text {
+  fill: #9ca3af !important;
+}
+
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+}
+
+@keyframes pulse-critical {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35); }
+  50%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease forwards;
 }

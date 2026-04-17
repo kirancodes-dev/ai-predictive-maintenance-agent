@@ -18,29 +18,10 @@ class MaintenanceOut(BaseModel):
     cost: Optional[float] = None
     notes: Optional[str] = None
     partsReplaced: List[str] = []
+    createdAt: str
 
     class Config:
         from_attributes = True
-
-    @classmethod
-    def from_orm(cls, r):
-        return cls(
-            id=r.id,
-            machineId=r.machine_id,
-            machineName=r.machine_name,
-            type=r.type,
-            status=r.status,
-            title=r.title,
-            description=r.description or "",
-            scheduledDate=r.scheduled_date,
-            completedDate=r.completed_date,
-            assignedTo=r.assigned_to,
-            estimatedDuration=r.estimated_duration,
-            actualDuration=r.actual_duration,
-            cost=r.cost,
-            notes=r.notes,
-            partsReplaced=r.parts_replaced or [],
-        )
 
 
 class MaintenanceCreateRequest(BaseModel):
@@ -54,18 +35,11 @@ class MaintenanceCreateRequest(BaseModel):
 
 
 class MaintenanceUpdateRequest(BaseModel):
-    type: Optional[str] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    scheduledDate: Optional[str] = None
     status: Optional[str] = None
-    assignedTo: Optional[str] = None
-    estimatedDuration: Optional[int] = None
+    completedDate: Optional[str] = None
     actualDuration: Optional[int] = None
     cost: Optional[float] = None
     notes: Optional[str] = None
-    completedDate: Optional[str] = None
-    partsReplaced: Optional[List[str]] = None
 
 
 class FailurePredictionOut(BaseModel):

@@ -1,12 +1,30 @@
-import apiClient from './apiClient';
-import { ENDPOINTS } from './endpoints';
-import type { SensorHistory } from '../../types/sensor.types';
-import type { ApiResponse, DateRangeParams } from '../../types/api.types';
+import { apiClient } from './apiClient';
+
+export interface SensorReadingDto {
+  sensorId: string;
+  machineId: string;
+  type: string;
+  value: number;
+  unit: string;
+  timestamp: string;
+  isAnomaly: boolean;
+}
+
+export interface SensorHistoryDto {
+  sensorId: string;
+  data: Array<{ timestamp: string; value: number }>;
+}
 
 export const streamApi = {
-  getLiveData: (machineId: string) =>
-    apiClient.get(ENDPOINTS.STREAM_LIVE(machineId)),
+  getLive: (machineId: string) =>
+    apiClient.get<{ data: SensorReadingDto[]; success: boolean }>(`/stream/${machineId}/live`),
 
-  getHistory: (machineId: string, params: DateRangeParams) =>
-    apiClient.get<ApiResponse<SensorHistory[]>>(ENDPOINTS.STREAM_HISTORY(machineId), { params }),
+  getHistory: (machineId: string, from: string, to: string) =>
+    apiClient.get<{ data: SensorHistoryDto[]; success: boolean }>(
+      `/stream/${machineId}/history`,
+      { params: { from, to } },
+    ),
+
+  getBaseline: (machineId: string) =>
+    apiClient.get(`/stream/${machineId}/baseline`),
 };

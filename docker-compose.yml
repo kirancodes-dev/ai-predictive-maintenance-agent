@@ -1,52 +1,60 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  simulation-server:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./backend:/app/backend
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./predictive_maintenance.db
+      - SIMULATION_SERVER_URL=http://simulation:3000
+      - CORS_ORIGINS=["http://localhost:3000","http://localhost:5173","http://localhost:8501"]
+    depends_on:
+      simulation:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  simulation:
     build:
       context: ./simulation-server
-    container_name: malendau-simulator
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    networks:
-      - maintenance-network
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/machines"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  backend:
-    build: ./backend
-    container_name: maintenance-backend
-    ports:
-      - "8000:8000"
-    environment:
-      - SIMULATION_SERVER_URL=http://simulation-server:3000
-      - DATABASE_URL=sqlite+aiosqlite:///./predictive_maintenance.db
-      - SECRET_KEY=change-this-secret-key-in-production-32chars
-      - CORS_ORIGINS=["http://localhost:3000","http://localhost:5173","http://localhost:80"]
-    volumes:
-      - ./predictive_maintenance.db:/app/predictive_maintenance.db
-    depends_on:
-      simulation-server:
-        condition: service_healthy
-    networks:
-      - maintenance-network
-
   frontend:
-    build: ./predictive-maintenance-frontend
-    container_name: maintenance-frontend
+    build:
+      context: ./predictive-maintenance-frontend
+      dockerfile: Dockerfile
     ports:
       - "5173:80"
-    environment:
-      - VITE_API_URL=http://localhost:8000/api/v1
-      - VITE_WS_URL=ws://localhost:8000/ws
-      - VITE_SIMULATION_URL=http://localhost:3000
     depends_on:
-      - backend
-    networks:
-      - maintenance-network
+      api:
+        condition: service_healthy
 
-networks:
-  maintenance-network:
-    driver: bridge
+  dashboard:
+    image: python:3.11-slim
+    working_dir: /app
+    command: bash -lc "pip install --no-cache-dir streamlit pandas requests && streamlit run dashboard.py --server.port 8501 --server.address 0.0.0.0"
+    volumes:
+      - ./:/app
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy

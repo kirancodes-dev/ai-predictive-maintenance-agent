@@ -17,10 +17,10 @@ export interface Alert {
   value?: number;
 }
 
-export interface AlertFilter {
-  severity?: AlertSeverity[];
-  status?: AlertStatus[];
-  machineId?: string;
-  from?: string;
-  to?: string;
+export interface AlertListResponse {
+  items: Alert[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
 }

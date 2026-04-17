@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { websocketService } from '../services/websocket/websocketService';
 
 interface UseWebSocketOptions {
@@ -7,24 +7,23 @@ interface UseWebSocketOptions {
 }
 
 export const useWebSocket = ({ path, onMessage }: UseWebSocketOptions) => {
-  const [isConnected, setIsConnected] = useState(false);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
   useEffect(() => {
     websocketService.connect(path);
-    setIsConnected(websocketService.isConnected);
-
+    const handler = (type: string, payload: unknown) => {
+      onMessageRef.current?.(type, payload);
+    };
+    websocketService.on(handler);
     return () => {
-      websocketService.disconnect();
-      setIsConnected(false);
+      websocketService.off(handler);
+      websocketService.disconnect(path);
     };
   }, [path]);
 
   return {
-    isConnected,
-    send: websocketService.send.bind(websocketService),
-    on: websocketService.on.bind(websocketService),
-    off: websocketService.off.bind(websocketService),
+    isConnected: websocketService.isConnected,
+    send: (data: unknown) => websocketService.send(data, path),
   };
 };

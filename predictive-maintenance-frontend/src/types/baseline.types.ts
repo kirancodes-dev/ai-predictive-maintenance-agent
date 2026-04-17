@@ -3,19 +3,19 @@ export type SensorTrend = 'stable' | 'increasing' | 'decreasing';
 export interface SensorBaseline {
   mean: number;
   std: number;
-  min: number;
-  max: number;
-  p5: number;
-  p95: number;
+  min?: number;
+  max?: number;
+  p5?: number;
+  p95?: number;
   warningMin: number;
   warningMax: number;
   criticalMin: number;
   criticalMax: number;
-  recentMean: number;
+  recentMean?: number;
   trend: SensorTrend;
   trendPct: number;
-  sampleCount: number;
-  source: 'computed' | 'db_fallback';
+  sampleCount?: number;
+  source?: 'computed' | 'db_fallback';
 }
 
 export interface MachineBaseline {

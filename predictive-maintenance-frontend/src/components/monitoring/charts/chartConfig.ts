@@ -1,4 +1,3 @@
-/** Visual + domain metadata only — thresholds come from auto-computed baselines */
 export const SENSOR_CONFIG = {
   temperature: {
     label: 'Temperature',
@@ -6,8 +5,7 @@ export const SENSOR_CONFIG = {
     color: '#ef4444',
     gradientId: 'grad-temp',
     icon: '🌡️',
-    /** Display domain — prevents chart y-axis from jumping wildly */
-    domain: [40, 110] as [number, number],
+    domain: [40, 120] as [number, number],
   },
   vibration: {
     label: 'Vibration',
@@ -15,7 +13,7 @@ export const SENSOR_CONFIG = {
     color: '#f59e0b',
     gradientId: 'grad-vib',
     icon: '📳',
-    domain: [0, 7] as [number, number],
+    domain: [0, 8] as [number, number],
   },
   rpm: {
     label: 'RPM',
@@ -37,12 +35,7 @@ export const SENSOR_CONFIG = {
 
 export type KnownSensorType = keyof typeof SENSOR_CONFIG;
 
-export const KNOWN_SENSOR_TYPES: KnownSensorType[] = [
-  'temperature',
-  'vibration',
-  'rpm',
-  'current',
-];
+export const KNOWN_SENSOR_TYPES: KnownSensorType[] = ['temperature', 'vibration', 'rpm', 'current'];
 
 export interface SensorChartPoint {
   timestamp: string;
@@ -50,7 +43,6 @@ export interface SensorChartPoint {
   isAnomaly?: boolean;
 }
 
-/** Shape passed from useBaseline into chart components */
 export interface SensorThresholds {
   warningMin: number;
   warningMax: number;
@@ -74,10 +66,11 @@ export interface CombinedDataPoint {
   [key: string]: number | string | undefined;
 }
 
-/** Normalise an absolute value to 0–100 % of the display domain */
 export function normalizeValue(type: KnownSensorType, value: number): number {
   const [dMin, dMax] = SENSOR_CONFIG[type].domain;
-  return Math.max(0, Math.min(100, ((value - dMin) / (dMax - dMin)) * 100));
+  // Use a wider spread: map domain to 10–90% so differences are more visible
+  const raw = (value - dMin) / (dMax - dMin);
+  return Math.max(0, Math.min(100, 10 + raw * 80));
 }
 
 export function getSensorTypeFromId(sensorId: string): KnownSensorType | null {

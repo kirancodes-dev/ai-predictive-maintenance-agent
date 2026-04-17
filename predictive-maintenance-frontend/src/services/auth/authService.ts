@@ -1,4 +1,4 @@
-import apiClient from '../api/apiClient';
+import { apiClient } from '../api/apiClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { tokenManager } from './tokenManager';
 

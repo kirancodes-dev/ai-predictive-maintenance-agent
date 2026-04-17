@@ -1,66 +1,65 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import Optional
 from app.database import get_db
 from app.models.machine import Machine
-from app.models.sensor import Sensor
-from app.models.maintenance import MaintenanceRecord
-from app.schemas.machine import MachineOut, MachineDetailOut, RiskOut
-from app.schemas.sensor import SensorOut
-from app.schemas.common import ApiResponse, PaginatedResponse
-from app.dependencies import get_current_user
 from app.models.user import User
-import math
+from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/machines", tags=["machines"])
 
 
-@router.get("", response_model=PaginatedResponse[MachineOut])
+def _machine_to_dict(m: Machine) -> dict:
+    return {
+        "id": m.id,
+        "name": m.name,
+        "model": m.model,
+        "location": m.location,
+        "status": m.status,
+        "riskScore": m.risk_score,
+        "riskLevel": m.risk_level,
+        "lastSeen": m.last_seen.isoformat() if m.last_seen else None,
+        "installDate": m.install_date,
+        "nextMaintenanceDate": m.next_maintenance_date,
+        "tags": m.tags or [],
+        "description": m.description,
+        "manufacturer": m.manufacturer,
+        "serialNumber": m.serial_number,
+        "firmwareVersion": m.firmware_version,
+        "createdAt": m.created_at.isoformat() if m.created_at else None,
+    }
+
+
+@router.get("")
 async def list_machines(
+    status: Optional[str] = Query(None),
+    risk_level: Optional[str] = Query(None, alias="riskLevel"),
     page: int = Query(1, ge=1),
-    pageSize: int = Query(20, ge=1, le=100),
+    limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    offset = (page - 1) * pageSize
-    total_result = await db.execute(select(func.count()).select_from(Machine))
-    total = total_result.scalar_one()
-    result = await db.execute(select(Machine).offset(offset).limit(pageSize))
+    q = select(Machine)
+    if status:
+        q = q.where(Machine.status == status)
+    if risk_level:
+        q = q.where(Machine.risk_level == risk_level)
+    total_result = await db.execute(select(func.count()).select_from(q.subquery()))
+    total = total_result.scalar() or 0
+    q = q.offset((page - 1) * limit).limit(limit)
+    result = await db.execute(q)
     machines = result.scalars().all()
-    items = [MachineOut.from_orm_machine(m) for m in machines]
-    return PaginatedResponse(
-        items=items,
-        total=total,
-        page=page,
-        pageSize=pageSize,
-        totalPages=math.ceil(total / pageSize) if total else 1,
-    )
-
-
-@router.get("/{machine_id}/risk")
-async def get_machine_risk(
-    machine_id: str,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
-):
-    result = await db.execute(select(Machine).where(Machine.id == machine_id))
-    machine = result.scalar_one_or_none()
-    if not machine:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Machine not found")
-    return {"data": RiskOut(score=machine.risk_score, level=machine.risk_level), "success": True}
-
-
-@router.get("/{machine_id}/sensors")
-async def get_machine_sensors(
-    machine_id: str,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
-):
-    result = await db.execute(select(Sensor).where(Sensor.machine_id == machine_id))
-    sensors = result.scalars().all()
-    return {"data": [SensorOut.from_orm_sensor(s) for s in sensors], "success": True}
+    import math
+    return {
+        "data": {
+            "items": [_machine_to_dict(m) for m in machines],
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "pages": math.ceil(total / limit) if total else 1,
+        }
+    }
 
 
 @router.get("/{machine_id}")
@@ -72,15 +71,5 @@ async def get_machine(
     result = await db.execute(select(Machine).where(Machine.id == machine_id))
     machine = result.scalar_one_or_none()
     if not machine:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Machine not found")
-    sensor_result = await db.execute(select(Sensor.id).where(Sensor.machine_id == machine_id))
-    sensor_ids = [r[0] for r in sensor_result.all()]
-    maint_result = await db.execute(
-        select(MaintenanceRecord.id).where(MaintenanceRecord.machine_id == machine_id)
-    )
-    maint_ids = [r[0] for r in maint_result.all()]
-    return {
-        "data": MachineDetailOut.from_orm_machine(machine, sensor_ids, maint_ids),
-        "success": True,
-    }
+    return {"data": _machine_to_dict(machine)}

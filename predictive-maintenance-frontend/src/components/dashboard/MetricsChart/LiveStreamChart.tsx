@@ -27,7 +27,7 @@ const LiveStreamChart: React.FC<LiveStreamChartProps> = ({
 }) => {
   const formatted = data.map(d => ({
     ...d,
-    time: formatDate(d.timestamp, 'HH:mm:ss'),
+    time: formatDate(d.timestamp, { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
   }));
 
   return (

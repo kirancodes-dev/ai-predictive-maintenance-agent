@@ -1,36 +1,33 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from app.config import settings
-
-
-engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=settings.ENVIRONMENT == "development",
-    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {},
-)
-
-AsyncSessionLocal = async_sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
 
 
 class Base(DeclarativeBase):
     pass
 
 
+engine = create_async_engine(settings.DATABASE_URL, echo=False)
+AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+
+
+async def init_db():
+    """Create all tables."""
+    # Import all models so SQLAlchemy registers them before create_all
+    import app.models.user  # noqa
+    import app.models.machine  # noqa
+    import app.models.sensor  # noqa
+    import app.models.alert  # noqa
+    import app.models.maintenance  # noqa
+    import app.models.technician  # noqa
+    import app.models.prediction  # noqa
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
 async def get_db():
     async with AsyncSessionLocal() as session:
         try:
             yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
         finally:
             await session.close()
-
-
-async def init_db():
-    async with engine.begin() as conn:
-        from app.models import user, machine, alert, maintenance, sensor  # noqa
-        await conn.run_sync(Base.metadata.create_all)

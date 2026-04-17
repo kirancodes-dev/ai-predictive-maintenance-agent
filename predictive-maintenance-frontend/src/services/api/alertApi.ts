@@ -1,18 +1,11 @@
-import apiClient from './apiClient';
-import { ENDPOINTS } from './endpoints';
-import type { Alert, AlertFilter } from '../../types/alert.types';
-import type { PaginatedResponse } from '../../types/api.types';
+import { apiClient } from './apiClient';
+import type { AlertListResponse } from '../../types/alert.types';
 
 export const alertApi = {
-  getAll: (params?: AlertFilter) =>
-    apiClient.get<PaginatedResponse<Alert>>(ENDPOINTS.ALERTS, { params }),
-
-  getById: (id: string) =>
-    apiClient.get<{ data: Alert }>(ENDPOINTS.ALERT_DETAIL(id)),
-
+  getAll: (params?: Record<string, unknown>) =>
+    apiClient.get<{ data: AlertListResponse }>('/alerts', { params }),
   acknowledge: (id: string) =>
-    apiClient.post(ENDPOINTS.ALERT_ACKNOWLEDGE(id)),
-
+    apiClient.patch(`/alerts/${id}/acknowledge`),
   resolve: (id: string) =>
-    apiClient.post(ENDPOINTS.ALERT_RESOLVE(id)),
+    apiClient.patch(`/alerts/${id}/resolve`),
 };

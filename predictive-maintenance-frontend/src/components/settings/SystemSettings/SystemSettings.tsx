@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../../../hooks/useTheme';
 
 const SystemSettings: React.FC = () => {
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const [refreshInterval, setRefreshInterval] = useState(30);
   const [wsEnabled, setWsEnabled] = useState(true);
   const [saved, setSaved] = useState(false);
@@ -19,7 +19,7 @@ const SystemSettings: React.FC = () => {
         <SettingRow label="Theme">
           <select
             value={theme}
-            onChange={e => setTheme(e.target.value as 'light' | 'dark')}
+            onChange={() => toggleTheme()}
             style={inputStyle}
           >
             <option value="light">Light</option>
