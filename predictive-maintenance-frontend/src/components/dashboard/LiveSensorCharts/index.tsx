@@ -1,17 +1,13 @@
-import React, { useMemo } from 'react';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
+import React, { useMemo, useEffect, useRef, useCallback } from 'react';
 import { SENSOR_CONFIG, KNOWN_SENSOR_TYPES, type KnownSensorType } from '../../monitoring/charts/chartConfig';
 import type { SensorReadingDto } from '../../../services/api/streamApi';
 
-/* ── ECG‑style neon palette per machine ── */
+/* ── Machine colors ── */
 const MACHINE_COLORS: Record<string, string> = {
-  CNC_01: '#00ff87',   // neon green
-  CNC_02: '#00d4ff',   // cyan
-  PUMP_03: '#ff6b6b',  // coral red
-  CONVEYOR_04: '#ffbe0b', // amber
+  CNC_01: '#e5383b',
+  CNC_02: '#2563eb',
+  PUMP_03: '#16a34a',
+  CONVEYOR_04: '#d97706',
 };
 
 const MACHINE_LABELS: Record<string, string> = {
@@ -21,11 +17,10 @@ const MACHINE_LABELS: Record<string, string> = {
   CONVEYOR_04: 'Conveyor #4',
 };
 
-/* ── ECG monitor background ── */
-const ECG_BG = '#0a0e17';
-const ECG_GRID = '#1a2332';
-const ECG_GRID_MAJOR = '#1e3a2a';
-const ECG_TEXT = '#4a6a5a';
+/* ── ECG paper styling ── */
+const ECG_PAPER = '#fef9f4';
+const ECG_GRID_MINOR = '#fde2d4';
+const ECG_GRID_MAJOR = '#f4b8a0';
 
 interface Props {
   liveData: Record<string, SensorReadingDto[]>;
@@ -46,117 +41,190 @@ const timeFmt = (ts: string) => {
   }
 };
 
-/* ── ECG‑style tooltip ── */
-const EcgTooltip = ({
-  active, payload, label, unit,
-}: {
-  active?: boolean;
-  payload?: Array<{ name: string; value: number; color: string }>;
-  label?: string;
-  unit: string;
-}) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{
-      background: 'rgba(10, 14, 23, 0.95)',
-      border: '1px solid #00ff8740',
-      borderRadius: 6,
-      padding: '10px 14px',
-      fontSize: 12,
-      boxShadow: '0 0 20px rgba(0, 255, 135, 0.15)',
-      minWidth: 170,
-      color: '#c0d0c0',
-      backdropFilter: 'blur(8px)',
-    }}>
-      <div style={{ color: '#4a6a5a', marginBottom: 6, fontSize: 10, fontFamily: 'monospace' }}>{label}</div>
-      {payload.map((p) => (
-        <div key={p.name} style={{
-          display: 'flex', justifyContent: 'space-between', gap: 16, marginBottom: 2,
-        }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{
-              width: 8, height: 3, borderRadius: 1,
-              background: p.color,
-              display: 'inline-block',
-              boxShadow: `0 0 6px ${p.color}`,
-            }} />
-            <span style={{ fontWeight: 500, fontFamily: 'monospace', fontSize: 11 }}>{p.name}</span>
-          </span>
-          <span style={{
-            fontWeight: 700, fontFamily: 'monospace', fontSize: 12,
-            color: p.color,
-            textShadow: `0 0 8px ${p.color}60`,
-          }}>
-            {p.value?.toFixed(2)} {unit}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-/* ── ECG CSS injected once ── */
-const ecgStyleId = 'ecg-chart-styles';
+/* ── Inject global ECG styles ── */
+const ecgStyleId = 'ecg-paper-styles';
 if (typeof document !== 'undefined' && !document.getElementById(ecgStyleId)) {
   const style = document.createElement('style');
   style.id = ecgStyleId;
   style.textContent = `
-    @keyframes ecgPulse {
-      0%, 100% { opacity: 1; box-shadow: 0 0 6px currentColor; }
-      50% { opacity: 0.4; box-shadow: 0 0 2px currentColor; }
+    @keyframes ecgBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
     }
-    @keyframes ecgSweep {
-      0% { opacity: 0.3; }
-      50% { opacity: 1; }
-      100% { opacity: 0.3; }
+    @keyframes ecgSweepLine {
+      0% { left: 0%; }
+      100% { left: 100%; }
     }
-    @keyframes ecgFlatline {
-      0% { width: 0%; }
-      100% { width: 100%; }
-    }
-    .ecg-monitor-card {
+    .ecg-paper-card {
       position: relative;
       overflow: hidden;
     }
-    .ecg-monitor-card::before {
+    .ecg-paper-card .ecg-sweep-bar {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, rgba(229,56,59,0), rgba(229,56,59,0.7), rgba(229,56,59,0));
+      box-shadow: 0 0 12px rgba(229,56,59,0.5), 4px 0 20px rgba(229,56,59,0.15);
+      pointer-events: none;
+      z-index: 5;
+      animation: ecgSweepLine 8s linear infinite;
+    }
+    .ecg-paper-card .ecg-sweep-bar::after {
       content: '';
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: 
-        repeating-linear-gradient(0deg, transparent, transparent 19px, ${ECG_GRID}33 19px, ${ECG_GRID}33 20px),
-        repeating-linear-gradient(90deg, transparent, transparent 19px, ${ECG_GRID}33 19px, ${ECG_GRID}33 20px);
+      top: 0; bottom: 0;
+      left: 3px;
+      width: 30px;
+      background: linear-gradient(90deg, rgba(254,249,244,0.6), transparent);
       pointer-events: none;
-      z-index: 0;
-      border-radius: 12px;
-    }
-    .ecg-monitor-card::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, #00ff8730, transparent);
-      z-index: 1;
-      pointer-events: none;
-    }
-    .ecg-monitor-card .recharts-cartesian-grid-horizontal line,
-    .ecg-monitor-card .recharts-cartesian-grid-vertical line {
-      stroke: ${ECG_GRID} !important;
-      stroke-opacity: 0.6 !important;
-    }
-    .ecg-flatline {
-      position: absolute;
-      bottom: 50%;
-      left: 0;
-      height: 2px;
-      background: linear-gradient(90deg, #00ff8700, #00ff8730, #00ff8700);
-      animation: ecgFlatline 3s ease-in-out infinite alternate;
-      pointer-events: none;
-      z-index: 1;
     }
   `;
   document.head.appendChild(style);
 }
 
+/* ── Canvas-based ECG chart ── */
+const EcgCanvas: React.FC<{
+  data: ChartPoint[];
+  machineIds: string[];
+  domain: [number, number];
+  unit: string;
+}> = ({ data, machineIds, domain, unit }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+
+    const padLeft = 48;
+    const padRight = 12;
+    const padTop = 8;
+    const padBottom = 24;
+    const chartW = w - padLeft - padRight;
+    const chartH = h - padTop - padBottom;
+    const [domMin, domMax] = domain;
+
+    // ── Draw ECG paper grid ──
+    // Minor grid (10px squares)
+    ctx.strokeStyle = ECG_GRID_MINOR;
+    ctx.lineWidth = 0.5;
+    for (let x = padLeft; x <= w - padRight; x += 10) {
+      ctx.beginPath(); ctx.moveTo(x, padTop); ctx.lineTo(x, h - padBottom); ctx.stroke();
+    }
+    for (let y = padTop; y <= h - padBottom; y += 10) {
+      ctx.beginPath(); ctx.moveTo(padLeft, y); ctx.lineTo(w - padRight, y); ctx.stroke();
+    }
+    // Major grid (50px squares)
+    ctx.strokeStyle = ECG_GRID_MAJOR;
+    ctx.lineWidth = 1;
+    for (let x = padLeft; x <= w - padRight; x += 50) {
+      ctx.beginPath(); ctx.moveTo(x, padTop); ctx.lineTo(x, h - padBottom); ctx.stroke();
+    }
+    for (let y = padTop; y <= h - padBottom; y += 50) {
+      ctx.beginPath(); ctx.moveTo(padLeft, y); ctx.lineTo(w - padRight, y); ctx.stroke();
+    }
+
+    // ── Y-axis labels ──
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    const yTicks = 5;
+    for (let i = 0; i <= yTicks; i++) {
+      const val = domMin + (domMax - domMin) * (1 - i / yTicks);
+      const y = padTop + (i / yTicks) * chartH;
+      ctx.fillText(Math.round(val).toString(), padLeft - 6, y + 3);
+    }
+
+    // ── X-axis labels ──
+    ctx.textAlign = 'center';
+    if (data.length > 0) {
+      const step = Math.max(1, Math.floor(data.length / 5));
+      for (let i = 0; i < data.length; i += step) {
+        const x = padLeft + (i / Math.max(1, data.length - 1)) * chartW;
+        ctx.fillText(data[i].label, x, h - 6);
+      }
+    }
+
+    // ── Draw waveforms ──
+    if (data.length < 2) return;
+
+    for (const mid of machineIds) {
+      const col = MACHINE_COLORS[mid] || '#888';
+      const points: { x: number; y: number }[] = [];
+
+      for (let i = 0; i < data.length; i++) {
+        const raw = data[i][mid] as number | undefined;
+        if (raw == null) continue;
+        const x = padLeft + (i / (data.length - 1)) * chartW;
+        const y = padTop + ((domMax - raw) / (domMax - domMin)) * chartH;
+        points.push({ x, y });
+      }
+
+      if (points.length < 2) continue;
+
+      // Main trace with glow
+      ctx.save();
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      // Latest point: pulsing dot
+      const last = points[points.length - 1];
+      ctx.save();
+      ctx.fillStyle = col;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(last.x, last.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      // White center
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(last.x, last.y, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }, [data, machineIds, domain]);
+
+  useEffect(() => {
+    draw();
+    const handleResize = () => draw();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [draw]);
+
+  return (
+    <div ref={containerRef} style={{ width: '100%', height: 220, position: 'relative' }}>
+      <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
+    </div>
+  );
+};
+
+/* ── Main component ── */
 const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
   const chartData = useMemo(() => {
     const byType: Record<KnownSensorType, ChartPoint[]> = {
@@ -165,7 +233,6 @@ const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
 
     for (const type of KNOWN_SENSOR_TYPES) {
       const timeMap = new Map<string, ChartPoint>();
-
       for (const mid of machineIds) {
         const readings = liveData[mid] ?? [];
         for (const r of readings) {
@@ -174,16 +241,13 @@ const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
           if (!timeMap.has(key)) {
             timeMap.set(key, { time: r.timestamp, label: timeFmt(r.timestamp) });
           }
-          const pt = timeMap.get(key)!;
-          pt[mid] = r.value;
+          timeMap.get(key)![mid] = r.value;
         }
       }
-
       byType[type] = Array.from(timeMap.values()).sort(
         (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime(),
       );
     }
-
     return byType;
   }, [liveData, machineIds]);
 
@@ -196,8 +260,8 @@ const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
             <span style={{ fontSize: 20 }}>💓</span>
             <span>Real-Time Sensor Trends</span>
           </h2>
-          <p style={{ margin: '4px 0 0', fontSize: 12, color: '#4a6a5a', fontFamily: 'monospace' }}>
-            LIVE MONITORING · auto-refresh 5s · {machineIds.length} machines
+          <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>
+            ECG Monitor · auto-refresh 5s · {machineIds.length} machines
           </p>
         </div>
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
@@ -206,14 +270,11 @@ const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
               display: 'flex', alignItems: 'center', gap: 6,
               fontSize: 11, fontWeight: 600,
               color: MACHINE_COLORS[mid] ?? '#666',
-              fontFamily: 'monospace',
-              textShadow: `0 0 10px ${MACHINE_COLORS[mid] ?? '#666'}50`,
             }}>
               <span style={{
-                width: 8, height: 3, borderRadius: 1,
+                width: 18, height: 3, borderRadius: 1,
                 background: MACHINE_COLORS[mid] ?? '#888',
                 display: 'inline-block',
-                boxShadow: `0 0 8px ${MACHINE_COLORS[mid] ?? '#888'}`,
               }} />
               {MACHINE_LABELS[mid] ?? mid}
             </span>
@@ -232,7 +293,7 @@ const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
           const data = chartData[type];
           const hasData = data.length > 0;
 
-          // Get latest values for the digital readout
+          // Latest values for readout
           const latestValues: Record<string, number | null> = {};
           machineIds.forEach((mid) => {
             const vals = data.map((d) => d[mid] as number | undefined).filter((v): v is number => v != null);
@@ -242,76 +303,78 @@ const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
           return (
             <div
               key={type}
-              className="ecg-monitor-card"
+              className="ecg-paper-card"
               style={{
-                background: ECG_BG,
+                background: ECG_PAPER,
                 borderRadius: 12,
                 padding: '14px 16px 10px',
-                border: `1px solid ${ECG_GRID}`,
-                boxShadow: '0 0 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.02)',
+                border: '1px solid ' + ECG_GRID_MAJOR,
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
                 position: 'relative',
               }}
             >
-              {/* Monitor header bar */}
+              {/* Sweep bar */}
+              {hasData && <div className="ecg-sweep-bar" />}
+
+              {/* Header */}
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                marginBottom: 8, position: 'relative', zIndex: 2,
+                marginBottom: 6, position: 'relative', zIndex: 2,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 16 }}>{cfg.icon}</span>
                   <span style={{
-                    fontWeight: 700, fontSize: 13, color: '#c0d0c0',
-                    fontFamily: 'monospace', letterSpacing: '0.05em',
+                    fontWeight: 700, fontSize: 13, color: '#1e293b',
+                    letterSpacing: '0.03em',
                   }}>
-                    {cfg.label.toUpperCase()}
+                    {cfg.label}
                   </span>
                   <span style={{
-                    fontSize: 10, color: ECG_TEXT,
-                    fontFamily: 'monospace',
-                    background: '#1a2332',
+                    fontSize: 10, color: '#94a3b8',
+                    background: '#f1f5f9',
                     padding: '1px 6px',
                     borderRadius: 3,
+                    fontFamily: 'monospace',
                   }}>
                     {cfg.unit}
                   </span>
                 </div>
 
-                {/* Live indicator */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {/* Live pulse */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{
-                    width: 6, height: 6, borderRadius: '50%',
-                    background: '#00ff87',
+                    width: 7, height: 7, borderRadius: '50%',
+                    background: '#e5383b',
                     display: 'inline-block',
-                    animation: 'ecgPulse 1.5s ease-in-out infinite',
-                    color: '#00ff87',
+                    animation: 'ecgBlink 1.2s ease-in-out infinite',
                   }} />
                   <span style={{
-                    fontSize: 10, color: '#00ff87', fontFamily: 'monospace',
-                    fontWeight: 700, letterSpacing: '0.1em',
+                    fontSize: 10, color: '#e5383b', fontWeight: 700,
+                    fontFamily: 'monospace', letterSpacing: '0.08em',
                   }}>
                     LIVE
                   </span>
                 </div>
               </div>
 
-              {/* Digital readout row */}
+              {/* Digital readout */}
               <div style={{
-                display: 'flex', gap: 12, marginBottom: 4,
+                display: 'flex', gap: 16, marginBottom: 4,
                 position: 'relative', zIndex: 2,
               }}>
                 {machineIds.map((mid) => {
                   const val = latestValues[mid];
                   const col = MACHINE_COLORS[mid] ?? '#888';
                   return (
-                    <div key={mid} style={{
-                      display: 'flex', alignItems: 'baseline', gap: 4,
-                    }}>
+                    <div key={mid} style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
                       <span style={{
-                        fontSize: 20, fontWeight: 800,
+                        width: 10, height: 3, borderRadius: 1,
+                        background: col, display: 'inline-block',
+                      }} />
+                      <span style={{
+                        fontSize: 18, fontWeight: 800,
                         fontFamily: 'monospace',
-                        color: val != null ? col : '#2a3a32',
-                        textShadow: val != null ? `0 0 12px ${col}80` : 'none',
-                        letterSpacing: '-0.02em',
+                        color: val != null ? col : '#cbd5e1',
                         lineHeight: 1,
                       }}>
                         {val != null ? val.toFixed(1) : '---'}
@@ -321,87 +384,41 @@ const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
                 })}
               </div>
 
-              {/* ECG Chart */}
+              {/* ECG Canvas Chart */}
               {!hasData ? (
                 <div style={{
                   height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   position: 'relative', zIndex: 2,
                 }}>
                   <div style={{
-                    color: '#2a3a32', fontSize: 13, fontFamily: 'monospace',
-                    textAlign: 'center',
+                    color: '#cbd5e1', fontSize: 13, fontFamily: 'monospace', textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: 28, marginBottom: 8 }}>⏤⏤⏤</div>
+                    <div style={{ fontSize: 24, marginBottom: 8, color: '#e5383b', opacity: 0.4 }}>
+                      ── ── ── ── ──
+                    </div>
                     AWAITING SIGNAL…
                   </div>
-                  <div className="ecg-flatline" />
                 </div>
               ) : (
                 <div style={{ position: 'relative', zIndex: 2 }}>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <LineChart data={data} margin={{ top: 4, right: 8, left: -4, bottom: 2 }}>
-                      <CartesianGrid
-                        strokeDasharray=""
-                        stroke={ECG_GRID}
-                        opacity={0.5}
-                        horizontalCoordinatesGenerator={({ height }: { height: number }) =>
-                          Array.from({ length: Math.floor(height / 20) }, (_, i) => i * 20)
-                        }
-                        verticalCoordinatesGenerator={({ width }: { width: number }) =>
-                          Array.from({ length: Math.floor(width / 20) }, (_, i) => i * 20)
-                        }
-                      />
-                      <XAxis
-                        dataKey="label"
-                        tick={{ fontSize: 9, fill: ECG_TEXT, fontFamily: 'monospace' }}
-                        tickLine={false}
-                        axisLine={{ stroke: ECG_GRID, strokeWidth: 1 }}
-                        interval="preserveStartEnd"
-                      />
-                      <YAxis
-                        domain={cfg.domain} width={48}
-                        tick={{ fontSize: 9, fill: ECG_TEXT, fontFamily: 'monospace' }}
-                        tickLine={false}
-                        axisLine={{ stroke: ECG_GRID, strokeWidth: 1 }}
-                        tickFormatter={(v: number) => `${v}`}
-                      />
-                      <Tooltip content={<EcgTooltip unit={cfg.unit} />} />
-                      {machineIds.map((mid) => {
-                        const col = MACHINE_COLORS[mid] ?? '#888';
-                        return (
-                          <Line
-                            key={mid}
-                            type="monotone"
-                            dataKey={mid}
-                            name={MACHINE_LABELS[mid] ?? mid}
-                            stroke={col}
-                            strokeWidth={2}
-                            dot={false}
-                            isAnimationActive={false}
-                            connectNulls
-                            activeDot={{
-                              r: 4, strokeWidth: 2,
-                              fill: ECG_BG,
-                              stroke: col,
-                              style: { filter: `drop-shadow(0 0 6px ${col})` },
-                            }}
-                            style={{ filter: `drop-shadow(0 0 4px ${col}80)` }}
-                          />
-                        );
-                      })}
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <EcgCanvas
+                    data={data}
+                    machineIds={machineIds}
+                    domain={cfg.domain as [number, number]}
+                    unit={cfg.unit}
+                  />
                 </div>
               )}
 
-              {/* Bottom stats strip */}
+              {/* Bottom stats */}
               {hasData && (
                 <div style={{
                   display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 4,
                   fontSize: 10, fontFamily: 'monospace',
-                  borderTop: `1px solid ${ECG_GRID}`,
-                  paddingTop: 6,
+                  borderTop: '1px solid ' + ECG_GRID_MAJOR + '50',
+                  paddingTop: 5,
                   position: 'relative', zIndex: 2,
+                  color: '#64748b',
                 }}>
                   {machineIds.map((mid) => {
                     const vals = data.map((d) => d[mid] as number | undefined).filter((v): v is number => v != null);
@@ -412,14 +429,12 @@ const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
                     return (
                       <span key={mid} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{
-                          width: 6, height: 2, borderRadius: 1,
-                          background: col,
-                          display: 'inline-block',
-                          boxShadow: `0 0 4px ${col}`,
+                          width: 8, height: 3, borderRadius: 1,
+                          background: col, display: 'inline-block',
                         }} />
-                        <span style={{ color: '#4a6a5a' }}>
-                          MIN <span style={{ color: col }}>{min.toFixed(1)}</span>
-                          {' '}MAX <span style={{ color: col }}>{max.toFixed(1)}</span>
+                        <span>
+                          MIN <strong style={{ color: col }}>{min.toFixed(1)}</strong>
+                          {' '}MAX <strong style={{ color: col }}>{max.toFixed(1)}</strong>
                         </span>
                       </span>
                     );
