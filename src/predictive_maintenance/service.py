@@ -10,6 +10,7 @@ from predictive_maintenance.logging_utils import append_jsonl
 from predictive_maintenance.model import FEATURE_COLUMNS, FailurePredictor
 
 
+# Treat 10 days as the maximum planning horizon for this simple RUL estimate.
 MAX_RUL_HOURS = 240.0
 
 
@@ -31,6 +32,7 @@ class MaintenanceService:
         rows = pd.DataFrame([{key: features[key] for key in FEATURE_COLUMNS}])
         probability = self.predictor.predict_failure_probability(rows)[0]
         drift_score = compute_drift_score(features, self.feature_stats)
+        # Higher failure probability maps linearly to lower estimated RUL.
         rul_hours = max(0.0, (1.0 - probability) * MAX_RUL_HOURS)
 
         prediction_record = {
