@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>🏭 Malendau - Sensor Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: white; margin-bottom: 24px; font-size: 2em; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .machine-id { font-size: 1.3em; font-weight: bold; }
+        .badge { background: #667eea; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.8em; }
+        .sensors { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .sensor { background: #f5f5f5; padding: 12px; border-radius: 8px; }
+        .label { font-size: 0.8em; color: #666; }
+        .value { font-size: 1.6em; font-weight: bold; color: #333; }
+        .unit { font-size: 0.7em; color: #999; }
+        .api { background: white; border-radius: 12px; padding: 20px; margin-top: 20px; }
+        .endpoint { background: #f9f9f9; padding: 8px 12px; margin: 6px 0; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+        .get { color: #61affe; font-weight: bold; }
+        .post { color: #49cc90; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🏭 Malendau Hackathon — Live Sensor Dashboard</h1>
+    <div class="grid" id="grid"></div>
+    <div class="api">
+        <b>API Endpoints</b>
+        <div class="endpoint"><span class="get">GET</span>  /stream/{machine_id} — SSE real-time stream</div>
+        <div class="endpoint"><span class="get">GET</span>  /history/{machine_id}?limit=N — historical data</div>
+        <div class="endpoint"><span class="get">GET</span>  /machines — list all machines</div>
+        <div class="endpoint"><span class="post">POST</span> /alert — raise alert</div>
+        <div class="endpoint"><span class="post">POST</span> /schedule-maintenance — schedule maintenance</div>
+    </div>
+</div>
+<script>
+const machines = ['CNC_01','CNC_02','PUMP_03','CONVEYOR_04'];
+const types = {CNC_01:'CNC Mill',CNC_02:'CNC Lathe',PUMP_03:'Pump',CONVEYOR_04:'Conveyor'};
+machines.forEach(id => {
+    const es = new EventSource('/stream/'+id);
+    es.onmessage = e => {
+        const d = JSON.parse(e.data);
+        let card = document.getElementById('c-'+id);
+        if (!card) {
+            card = document.createElement('div');
+            card.id = 'c-'+id; card.className = 'card';
+            card.innerHTML = `<div class="card-header"><span class="machine-id">${id}</span><span class="badge">${types[id]}</span></div>
+            <div class="sensors">
+                <div class="sensor"><div class="label">🌡️ Temperature</div><div class="value"><span id="${id}-t">--</span><span class="unit"> °C</span></div></div>
+                <div class="sensor"><div class="label">📳 Vibration</div><div class="value"><span id="${id}-v">--</span><span class="unit"> mm/s</span></div></div>
+                <div class="sensor"><div class="label">🔄 RPM</div><div class="value"><span id="${id}-r">--</span></div></div>
+                <div class="sensor"><div class="label">⚡ Current</div><div class="value"><span id="${id}-c">--</span><span class="unit"> A</span></div></div>
+            </div>`;
+            document.getElementById('grid').appendChild(card);
+        }
+        document.getElementById(id+'-t').textContent = d.temperature_C.toFixed(1);
+        document.getElementById(id+'-v').textContent = d.vibration_mm_s.toFixed(2);
+        document.getElementById(id+'-r').textContent = d.rpm;
+        document.getElementById(id+'-c').textContent = d.current_A.toFixed(1);
+    };
+});
+</script>
+</body>
+</html>

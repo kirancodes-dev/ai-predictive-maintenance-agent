@@ -1,0 +1,18 @@
+{
+  "name": "malendau-hackathon-server",
+  "version": "1.0.0",
+  "description": "Industrial sensor simulation server for Predictive Maintenance hackathon",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "generate-history": "node generate-history.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

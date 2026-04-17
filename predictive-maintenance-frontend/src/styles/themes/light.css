@@ -1,0 +1,12 @@
+/* Light theme overrides */
+[data-theme='light'] {
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-bg-tertiary: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-sidebar-bg: #1e293b;
+  --color-sidebar-text: #cbd5e1;
+}

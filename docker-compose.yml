@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  simulation-server:
+    build:
+      context: ./simulation-server
+    container_name: malendau-simulator
+    ports:
+      - "3000:3000"
+    networks:
+      - maintenance-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/machines"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    build: ./backend
+    container_name: maintenance-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - SIMULATION_SERVER_URL=http://simulation-server:3000
+      - DATABASE_URL=sqlite+aiosqlite:///./predictive_maintenance.db
+      - SECRET_KEY=change-this-secret-key-in-production-32chars
+      - CORS_ORIGINS=["http://localhost:3000","http://localhost:5173","http://localhost:80"]
+    volumes:
+      - ./predictive_maintenance.db:/app/predictive_maintenance.db
+    depends_on:
+      simulation-server:
+        condition: service_healthy
+    networks:
+      - maintenance-network
+
+  frontend:
+    build: ./predictive-maintenance-frontend
+    container_name: maintenance-frontend
+    ports:
+      - "5173:80"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+      - VITE_WS_URL=ws://localhost:8000/ws
+      - VITE_SIMULATION_URL=http://localhost:3000
+    depends_on:
+      - backend
+    networks:
+      - maintenance-network
+
+networks:
+  maintenance-network:
+    driver: bridge
