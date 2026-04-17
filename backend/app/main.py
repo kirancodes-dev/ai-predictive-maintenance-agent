@@ -1,0 +1,91 @@
+import asyncio
+import logging
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from app.config import settings
+from app.database import init_db, AsyncSessionLocal
+from app.utils.seed_data import seed_database
+from app.routers import auth, machines, alerts, maintenance, stream, websocket, predictions, technicians, ml, data
+from app.services.automation import run_automation_loop
+from app.services.ml_service import ml_service
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("main")
+
+_automation_task = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global _automation_task
+    # Startup
+    await init_db()
+    async with AsyncSessionLocal() as db:
+        await seed_database(db)
+
+    # Bootstrap ML model (load existing or train from data/)
+    ml_service.bootstrap()
+
+    # Start background automation loop
+    _automation_task = asyncio.create_task(run_automation_loop())
+    logger.info("🤖 Automation loop started")
+
+    yield
+
+    # Shutdown
+    if _automation_task and not _automation_task.done():
+        _automation_task.cancel()
+        try:
+            await _automation_task
+        except asyncio.CancelledError:
+            pass
+    logger.info("🛑 Automation loop stopped")
+
+
+app = FastAPI(
+    title="Predictive Maintenance API",
+    version="2.0.0",
+    description=(
+        "Predictive Maintenance Platform — with automated failure prediction, "
+        "technician dispatch, and real-time notifications."
+    ),
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ── REST routes ─────────────────────────────────────────────────────────────
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(machines.router, prefix="/api/v1")
+app.include_router(alerts.router, prefix="/api/v1")
+app.include_router(maintenance.router, prefix="/api/v1")
+app.include_router(stream.router, prefix="/api/v1")
+app.include_router(predictions.router, prefix="/api/v1")
+app.include_router(technicians.router, prefix="/api/v1")
+app.include_router(ml.router, prefix="/api/v1")
+app.include_router(data.router, prefix="/api/v1")
+
+# ── WebSocket ────────────────────────────────────────────────────────────────
+app.include_router(websocket.router)
+
+
+@app.get("/")
+async def root():
+    return {
+        "service": "Predictive Maintenance API",
+        "version": "2.0.0",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "version": "2.0.0", "automation": "running"}
