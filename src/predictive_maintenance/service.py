@@ -10,6 +10,9 @@ from predictive_maintenance.logging_utils import append_jsonl
 from predictive_maintenance.model import FEATURE_COLUMNS, FailurePredictor
 
 
+MAX_RUL_HOURS = 240.0
+
+
 class MaintenanceService:
     def __init__(self, data_dir: str | Path = "data", model_dir: str | Path = "models", logs_dir: str | Path = "logs") -> None:
         self.data_dir = Path(data_dir)
@@ -28,7 +31,7 @@ class MaintenanceService:
         rows = pd.DataFrame([{key: features[key] for key in FEATURE_COLUMNS}])
         probability = self.predictor.predict_failure_probability(rows)[0]
         drift_score = compute_drift_score(features, self.feature_stats)
-        rul_hours = max(0.0, (1.0 - probability) * 240.0)
+        rul_hours = max(0.0, (1.0 - probability) * MAX_RUL_HOURS)
 
         prediction_record = {
             "asset_id": asset_id,
