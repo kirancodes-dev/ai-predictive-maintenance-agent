@@ -21,7 +21,7 @@ import app.models.sensor
 import app.models.alert
 import app.models.maintenance
 #import app.models.technician
-import app.models.prediction
+#import app.models.prediction
 
 from app.database import Base
 
