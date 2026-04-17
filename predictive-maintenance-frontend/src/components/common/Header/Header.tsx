@@ -15,10 +15,22 @@ const Header: React.FC = () => {
     return path.slice(1).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
+  const getGreeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
     <header className="header">
       <div className="header__title">{getPageTitle()}</div>
       <div className="header__actions">
+        {user && (
+          <span style={{ fontSize: '0.75rem', color: '#64748b', marginRight: 4 }}>
+            {getGreeting()}, {user.name?.split(' ')[0]}
+          </span>
+        )}
         <button
           className="header__theme-toggle"
           onClick={toggleTheme}

@@ -36,16 +36,27 @@ const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) =>
 
         return (
           <div key={m.id} style={{
-            background: '#fff', borderRadius: 12, padding: '1rem 1.25rem',
-            border: `1.5px solid ${hasAnomaly ? '#fca5a5' : STATUS_COLORS[m.status] ?? '#e2e8f0'}`,
-            boxShadow: hasAnomaly ? '0 0 0 2px #fee2e233, 0 2px 8px rgba(0,0,0,0.06)' : '0 1px 4px rgba(0,0,0,0.06)',
-            transition: 'border-color 0.3s, box-shadow 0.3s',
-          }}>
+            background: 'var(--color-surface, #fff)', borderRadius: 14, padding: '1rem 1.25rem',
+            border: `1.5px solid ${hasAnomaly ? '#fca5a5' : STATUS_COLORS[m.status] ?? 'var(--color-border, #e2e8f0)'}`,
+            boxShadow: hasAnomaly
+              ? '0 0 0 2px #fee2e233, 0 2px 8px var(--color-card-shadow, rgba(0,0,0,0.06))'
+              : '0 1px 4px var(--color-card-shadow, rgba(0,0,0,0.06))',
+            transition: 'all 0.2s ease',
+          }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px var(--color-card-shadow, rgba(0,0,0,0.1))';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 1px 4px var(--color-card-shadow, rgba(0,0,0,0.06))';
+            }}
+          >
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</div>
-                <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{m.location} · {m.model}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-text)' }}>{m.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--color-muted, #64748b)', marginTop: 1 }}>{m.location} · {m.model}</div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                 <span style={{ fontSize: 10, fontWeight: 700, color: STATUS_COLORS[m.status] ?? '#888',
@@ -73,10 +84,10 @@ const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) =>
                 const valColor = !r ? '#94a3b8' : r.isAnomaly ? '#ef4444' : pct && pct > 80 ? '#f97316' : cfg.color;
                 return (
                   <div key={type} style={{
-                    background: '#f8fafc', borderRadius: 8, padding: '6px 8px',
-                    border: r?.isAnomaly ? '1px solid #fca5a5' : '1px solid #f1f5f9',
+                    background: 'var(--color-bg, #f8fafc)', borderRadius: 8, padding: '6px 8px',
+                    border: r?.isAnomaly ? '1px solid #fca5a5' : '1px solid var(--color-border, #f1f5f9)',
                   }}>
-                    <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 2 }}>
+                    <div style={{ fontSize: 10, color: 'var(--color-subtle, #94a3b8)', marginBottom: 2 }}>
                       {cfg.icon} {cfg.label}
                     </div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: valColor }}>
@@ -97,12 +108,12 @@ const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) =>
             {/* Risk score bar */}
             <div style={{ marginBottom: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                <span style={{ fontSize: 11, color: '#64748b' }}>Risk Score</span>
+                <span style={{ fontSize: 11, color: 'var(--color-muted, #64748b)' }}>Risk Score</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: RISK_COLORS[m.riskLevel] }}>
                   {m.riskScore.toFixed(0)}% — {m.riskLevel}
                 </span>
               </div>
-              <div style={{ height: 5, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ height: 5, background: 'var(--color-border, #f1f5f9)', borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{
                   width: `${m.riskScore}%`, height: '100%',
                   background: RISK_COLORS[m.riskLevel] ?? '#888',
@@ -113,9 +124,10 @@ const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) =>
 
             {/* View link */}
             <Link to={`/monitoring?machine=${m.id}`}
-              style={{ display: 'block', textAlign: 'center', padding: '6px', fontSize: 12,
-                       fontWeight: 600, color: '#3b82f6', background: '#eff6ff',
-                       borderRadius: 7, textDecoration: 'none', transition: 'background 0.15s' }}>
+              style={{ display: 'block', textAlign: 'center', padding: '8px', fontSize: 12,
+                       fontWeight: 600, color: '#3b82f6', background: 'rgba(59,130,246,0.08)',
+                       borderRadius: 8, textDecoration: 'none', transition: 'all 0.15s',
+                       border: '1px solid rgba(59,130,246,0.15)' }}>
               View Live Sensors →
             </Link>
           </div>

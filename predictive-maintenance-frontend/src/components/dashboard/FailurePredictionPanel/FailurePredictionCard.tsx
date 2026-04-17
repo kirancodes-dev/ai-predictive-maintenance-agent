@@ -45,15 +45,17 @@ const FailurePredictionCard: React.FC<Props> = ({ prediction }) => {
         border: `2px solid ${cfg.color}`,
         borderRadius: '12px',
         padding: '1rem 1.25rem',
-        background: cfg.bg,
+        background: 'var(--color-surface, #fff)',
         position: 'relative',
         overflow: 'hidden',
+        borderLeft: `4px solid ${cfg.color}`,
         animation: cfg.pulse ? 'pulse-border 2s infinite' : undefined,
+        transition: 'transform 0.15s, box-shadow 0.15s',
       }}
     >
       {/* Urgency badge */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-        <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#111' }}>
+        <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--color-text, #111)' }}>
           {prediction.machineName}
         </span>
         <span
@@ -76,11 +78,11 @@ const FailurePredictionCard: React.FC<Props> = ({ prediction }) => {
         <span style={{ fontSize: '2rem', fontWeight: 800, color: cfg.color, lineHeight: 1 }}>
           {formatCountdown(hoursLeft)}
         </span>
-        <span style={{ fontSize: '0.8125rem', color: '#555' }}>until predicted failure</span>
+        <span style={{ fontSize: '0.8125rem', color: 'var(--color-muted, #555)' }}>until predicted failure</span>
       </div>
 
       {/* Details */}
-      <div style={{ fontSize: '0.8125rem', color: '#444', lineHeight: 1.6 }}>
+      <div style={{ fontSize: '0.8125rem', color: 'var(--color-text, #444)', lineHeight: 1.6 }}>
         <div><strong>Failure type:</strong> {prediction.failureType}</div>
         <div><strong>Confidence:</strong> {(prediction.confidence * 100).toFixed(0)}%</div>
         {prediction.assignedTechnicianName && (
@@ -101,8 +103,8 @@ const FailurePredictionCard: React.FC<Props> = ({ prediction }) => {
         style={{
           marginTop: '0.75rem',
           fontSize: '0.8rem',
-          color: '#555',
-          background: 'rgba(0,0,0,0.04)',
+          color: 'var(--color-muted, #555)',
+          background: 'var(--color-bg, rgba(0,0,0,0.04))',
           borderRadius: '6px',
           padding: '0.4rem 0.6rem',
         }}

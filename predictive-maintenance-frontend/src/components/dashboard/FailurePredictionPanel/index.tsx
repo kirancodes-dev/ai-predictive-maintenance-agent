@@ -23,7 +23,7 @@ const FailurePredictionPanel: React.FC = () => {
           🔮 Failure Predictions
         </h2>
         {isFetching && (
-          <span style={{ fontSize: '0.75rem', color: '#888' }}>Refreshing…</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-muted, #888)' }}>Refreshing…</span>
         )}
         <span
           style={{
@@ -39,7 +39,7 @@ const FailurePredictionPanel: React.FC = () => {
         </span>
       </div>
 
-      {isLoading && <p style={{ color: '#888', fontSize: '0.875rem' }}>Analyzing machine health…</p>}
+      {isLoading && <p style={{ color: 'var(--color-muted, #888)', fontSize: '0.875rem' }}>Analyzing machine health…</p>}
 
       {!isLoading && shown.length === 0 && (
         <p style={{ color: '#22c55e', fontSize: '0.875rem' }}>✅ All machines are operating within normal parameters.</p>
@@ -58,7 +58,7 @@ const FailurePredictionPanel: React.FC = () => {
       </div>
 
       {urgent.length === 0 && predictions.length > 0 && (
-        <p style={{ marginTop: '0.75rem', fontSize: '0.8125rem', color: '#888' }}>
+        <p style={{ marginTop: '0.75rem', fontSize: '0.8125rem', color: 'var(--color-muted, #888)' }}>
           {predictions.length} machine(s) monitored — all within safe operational range.
         </p>
       )}

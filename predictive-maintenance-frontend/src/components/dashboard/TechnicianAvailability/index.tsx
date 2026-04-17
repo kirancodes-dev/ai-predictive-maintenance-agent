@@ -81,8 +81,9 @@ const TechCard: React.FC<TechCardProps> = ({ tech, status }) => {
         gap: '0.75rem',
         padding: '0.625rem 0.875rem',
         borderRadius: '8px',
-        background: status === 'available' ? '#f0fdf4' : status === 'busy' ? '#fffbeb' : '#f8fafc',
-        border: `1px solid ${status === 'available' ? '#bbf7d0' : status === 'busy' ? '#fde68a' : '#e2e8f0'}`,
+        background: 'var(--color-surface, #fff)',
+        border: `1px solid ${status === 'available' ? '#bbf7d0' : status === 'busy' ? '#fde68a' : 'var(--color-border, #e2e8f0)'}`,
+        borderLeft: `3px solid ${cfg.dot}`,
       }}
     >
       {/* Status dot */}
@@ -97,15 +98,15 @@ const TechCard: React.FC<TechCardProps> = ({ tech, status }) => {
         }}
       />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#111' }}>{tech.name}</div>
-        <div style={{ fontSize: '0.75rem', color: '#555' }}>{tech.specialty}</div>
+        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--color-text, #111)' }}>{tech.name}</div>
+        <div style={{ fontSize: '0.75rem', color: 'var(--color-muted, #555)' }}>{tech.specialty}</div>
         {tech.currentAssignmentMachineName && (
           <div style={{ fontSize: '0.75rem', color: '#b45309', fontWeight: 500 }}>
             🔧 {tech.currentAssignmentMachineName}
           </div>
         )}
         {tech.estimatedFreeAt && (
-          <div style={{ fontSize: '0.7rem', color: '#888' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--color-muted, #888)' }}>
             Free ~{new Date(tech.estimatedFreeAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
         )}
