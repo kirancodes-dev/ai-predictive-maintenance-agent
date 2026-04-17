@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
@@ -20,6 +20,8 @@ const MACHINE_LABELS: Record<string, string> = {
   PUMP_03: 'Pump #3',
   CONVEYOR_04: 'Conveyor #4',
 };
+
+const MAX_HISTORY = 60; // keep last 60 data points (~5 minutes at 5s poll)
 
 interface Props {
   liveData: Record<string, SensorReadingDto[]>;
@@ -146,30 +148,67 @@ const StatsBar: React.FC<{
 
 /* ── Main component ── */
 const LiveSensorCharts: React.FC<Props> = ({ liveData, machineIds }) => {
-  const chartData = useMemo(() => {
-    const byType: Record<KnownSensorType, ChartPoint[]> = {
-      temperature: [], vibration: [], rpm: [], current: [],
-    };
+  // Accumulate data points over time (each poll adds new points)
+  const historyRef = useRef<Record<KnownSensorType, ChartPoint[]>>({
+    temperature: [], vibration: [], rpm: [], current: [],
+  });
+
+  // Track last-seen timestamp to avoid duplicates
+  const lastSeenRef = useRef<string>('');
+
+  useEffect(() => {
+    // Merge latest poll data into history buffer
+    const now = new Date().toISOString();
+    const nowKey = now.slice(0, 19);
+
+    // Check if we have any new data
+    const allReadings = Object.values(liveData).flat();
+    if (!allReadings.length) return;
+
+    // Use latest timestamp from the data, or current time
+    const latestTs = allReadings.reduce((best, r) => r.timestamp > best ? r.timestamp : best, '');
+    const tsKey = latestTs ? latestTs.slice(0, 19) : nowKey;
+
+    // Skip if we already processed this timestamp
+    if (tsKey === lastSeenRef.current) return;
+    lastSeenRef.current = tsKey;
 
     for (const type of KNOWN_SENSOR_TYPES) {
-      const timeMap = new Map<string, ChartPoint>();
+      const point: ChartPoint = {
+        time: latestTs || now,
+        label: timeFmt(latestTs || now),
+      };
+
+      let hasValue = false;
       for (const mid of machineIds) {
         const readings = liveData[mid] ?? [];
-        for (const r of readings) {
-          if (r.type !== type) continue;
-          const key = r.timestamp.slice(0, 19);
-          if (!timeMap.has(key)) {
-            timeMap.set(key, { time: r.timestamp, label: timeFmt(r.timestamp) });
-          }
-          timeMap.get(key)![mid] = r.value;
+        const reading = readings.find((r) => r.type === type);
+        if (reading) {
+          point[mid] = reading.value;
+          hasValue = true;
         }
       }
-      byType[type] = Array.from(timeMap.values()).sort(
-        (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime(),
-      );
+
+      if (hasValue) {
+        historyRef.current[type] = [
+          ...historyRef.current[type],
+          point,
+        ].slice(-MAX_HISTORY);
+      }
     }
-    return byType;
   }, [liveData, machineIds]);
+
+  // Build chart data from accumulated history
+  const chartData = useMemo(() => {
+    const byType: Record<KnownSensorType, ChartPoint[]> = {
+      temperature: [...historyRef.current.temperature],
+      vibration: [...historyRef.current.vibration],
+      rpm: [...historyRef.current.rpm],
+      current: [...historyRef.current.current],
+    };
+    return byType;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveData]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
