@@ -175,20 +175,64 @@ const EcgCanvas: React.FC<{
 
       if (points.length < 2) continue;
 
-      // Main trace with glow
+      // ── Smooth elliptic curve trace (Catmull-Rom → Cubic Bezier) ──
       ctx.save();
       ctx.strokeStyle = col;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
       ctx.shadowColor = col;
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
+
+      if (points.length === 2) {
+        // Just two points — draw a simple line
+        ctx.lineTo(points[1].x, points[1].y);
+      } else {
+        // Catmull-Rom spline converted to cubic bezier for smooth elliptic curves
+        const tension = 0.35;
+        for (let i = 0; i < points.length - 1; i++) {
+          const p0 = points[Math.max(0, i - 1)];
+          const p1 = points[i];
+          const p2 = points[i + 1];
+          const p3 = points[Math.min(points.length - 1, i + 2)];
+
+          const cp1x = p1.x + (p2.x - p0.x) * tension;
+          const cp1y = p1.y + (p2.y - p0.y) * tension;
+          const cp2x = p2.x - (p3.x - p1.x) * tension;
+          const cp2y = p2.y - (p3.y - p1.y) * tension;
+
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        }
       }
       ctx.stroke();
+
+      // Second pass: thinner bright core for glow depth
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = col;
+      ctx.globalAlpha = 0.4;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      if (points.length === 2) {
+        ctx.lineTo(points[1].x, points[1].y);
+      } else {
+        const tension = 0.35;
+        for (let i = 0; i < points.length - 1; i++) {
+          const p0 = points[Math.max(0, i - 1)];
+          const p1 = points[i];
+          const p2 = points[i + 1];
+          const p3 = points[Math.min(points.length - 1, i + 2)];
+          const cp1x = p1.x + (p2.x - p0.x) * tension;
+          const cp1y = p1.y + (p2.y - p0.y) * tension;
+          const cp2x = p2.x - (p3.x - p1.x) * tension;
+          const cp2y = p2.y - (p3.y - p1.y) * tension;
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        }
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
       ctx.restore();
 
       // Latest point: pulsing dot
