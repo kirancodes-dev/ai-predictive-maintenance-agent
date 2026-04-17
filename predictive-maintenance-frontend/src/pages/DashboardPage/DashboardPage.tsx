@@ -75,11 +75,11 @@ const DashboardPage: React.FC = () => {
   const criticalMachines = machines.filter((m) => m.riskLevel === 'critical' || m.status === 'critical').length;
 
   const stats = [
-    { label: 'Total Machines', value: machinesData?.total ?? 0, icon: '🏭', color: '#1a56db' },
-    { label: 'Active Alerts',  value: alerts.length, icon: '🔔',
+    { label: 'Total Machines', value: machinesData?.total ?? 0, icon: 'M', color: '#1a56db' },
+    { label: 'Active Alerts',  value: alerts.length, icon: '!',
       color: alerts.length > 0 ? '#dc2626' : '#059669' },
-    { label: 'Online',         value: onlineMachines, icon: '✓', color: '#059669' },
-    { label: 'Critical Risk',  value: criticalMachines, icon: '⚠',
+    { label: 'Online',         value: onlineMachines, icon: '\u2713', color: '#059669' },
+    { label: 'Critical Risk',  value: criticalMachines, icon: '\u26a0',
       color: criticalMachines > 0 ? '#dc2626' : '#059669' },
   ];
 

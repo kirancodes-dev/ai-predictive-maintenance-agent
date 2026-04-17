@@ -213,7 +213,7 @@ const ReportsPage: React.FC = () => {
             borderBottom: '1px solid var(--color-border, #e2e8f0)',
           }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 16 }}>📋</span> Report JSON Preview
+              <span style={{ fontSize: 16 }}>{ }</span> Report JSON Preview
             </span>
             <div style={{ display: 'flex', gap: 8 }}>
               <button
@@ -228,7 +228,7 @@ const ReportsPage: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                📋 Copy
+                Copy
               </button>
             </div>
           </div>

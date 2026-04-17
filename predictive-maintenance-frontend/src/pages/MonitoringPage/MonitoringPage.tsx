@@ -3,10 +3,10 @@ import LiveStream from '../../components/monitoring/LiveStream/LiveStream';
 import HistoryView from '../../components/monitoring/HistoryView/HistoryView';
 
 const MACHINES = [
-  { id: 'CNC_01',      name: 'CNC Machine #1',   type: 'CNC Mill',         icon: '🔩', risk: 'high' },
-  { id: 'CNC_02',      name: 'CNC Machine #2',   type: 'CNC Lathe',        icon: '⚙️', risk: 'medium' },
-  { id: 'PUMP_03',     name: 'Pump Station #3',  type: 'Industrial Pump',  icon: '💧', risk: 'critical' },
-  { id: 'CONVEYOR_04', name: 'Conveyor Belt #4', type: 'Conveyor Belt',    icon: '🏗️', risk: 'low' },
+  { id: 'CNC_01',      name: 'CNC Machine #1',   type: 'CNC Mill',         icon: 'C1', risk: 'high' },
+  { id: 'CNC_02',      name: 'CNC Machine #2',   type: 'CNC Lathe',        icon: 'C2', risk: 'medium' },
+  { id: 'PUMP_03',     name: 'Pump Station #3',  type: 'Industrial Pump',  icon: 'P3', risk: 'critical' },
+  { id: 'CONVEYOR_04', name: 'Conveyor Belt #4', type: 'Conveyor Belt',    icon: 'V4', risk: 'low' },
 ];
 
 const RISK_COLORS: Record<string, string> = {
