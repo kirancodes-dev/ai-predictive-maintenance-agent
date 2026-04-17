@@ -25,7 +25,7 @@ class MaintenanceService:
         self.feature_stats = artifacts.feature_stats
 
     def predict(self, asset_id: str, features: dict[str, float]) -> dict[str, float | str]:
-        rows = pd.DataFrame([{**{key: features[key] for key in FEATURE_COLUMNS}}])
+        rows = pd.DataFrame([{key: features[key] for key in FEATURE_COLUMNS}])
         probability = self.predictor.predict_failure_probability(rows)[0]
         drift_score = compute_drift_score(features, self.feature_stats)
         rul_hours = max(0.0, (1.0 - probability) * 240.0)
