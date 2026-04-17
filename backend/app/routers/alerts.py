@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
+from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import Optional, List
@@ -8,8 +9,57 @@ from app.database import get_db
 from app.models.alert import Alert
 from app.models.user import User
 from app.dependencies import get_current_user, require_operator
+from app.core.websocket_manager import ws_manager
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
+
+VALID_SEVERITIES = {"info", "warning", "error", "critical"}
+VALID_MACHINE_IDS = {"CNC_01", "CNC_02", "PUMP_03", "CONVEYOR_04"}
+MACHINE_NAMES = {
+    "CNC_01": "CNC Machine #1",
+    "CNC_02": "CNC Machine #2",
+    "PUMP_03": "Pump #3",
+    "CONVEYOR_04": "Conveyor #4",
+}
+
+
+class CreateAlertRequest(BaseModel):
+    machineId: str
+    severity: str
+    title: str
+    message: str
+    sensorId: Optional[str] = None
+    value: Optional[float] = None
+
+    @field_validator("severity")
+    @classmethod
+    def validate_severity(cls, v: str) -> str:
+        if v not in VALID_SEVERITIES:
+            raise ValueError(f"severity must be one of {VALID_SEVERITIES}")
+        return v
+
+    @field_validator("machineId")
+    @classmethod
+    def validate_machine(cls, v: str) -> str:
+        if v not in VALID_MACHINE_IDS:
+            raise ValueError(f"machineId must be one of {VALID_MACHINE_IDS}")
+        return v
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 3 or len(v) > 500:
+            raise ValueError("title must be between 3 and 500 characters")
+        return v
+
+    @field_validator("message")
+    @classmethod
+    def validate_message(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 3 or len(v) > 2000:
+            raise ValueError("message must be between 3 and 2000 characters")
+        return v
 
 
 def _alert_to_dict(a: Alert) -> dict:
@@ -27,6 +77,66 @@ def _alert_to_dict(a: Alert) -> dict:
         "acknowledgedBy": a.acknowledged_by,
         "sensorId": a.sensor_id,
         "value": a.value,
+    }
+
+
+@router.get("/summary")
+async def alert_summary(
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """Quick summary stats for the dashboard."""
+    total_r = await db.execute(select(func.count()).select_from(Alert))
+    total = total_r.scalar() or 0
+
+    active_r = await db.execute(
+        select(func.count()).select_from(
+            select(Alert).where(Alert.status == "active").subquery()
+        )
+    )
+    active = active_r.scalar() or 0
+
+    critical_r = await db.execute(
+        select(func.count()).select_from(
+            select(Alert).where(Alert.severity == "critical", Alert.status == "active").subquery()
+        )
+    )
+    critical = critical_r.scalar() or 0
+
+    acknowledged_r = await db.execute(
+        select(func.count()).select_from(
+            select(Alert).where(Alert.status == "acknowledged").subquery()
+        )
+    )
+    acknowledged = acknowledged_r.scalar() or 0
+
+    resolved_r = await db.execute(
+        select(func.count()).select_from(
+            select(Alert).where(Alert.status == "resolved").subquery()
+        )
+    )
+    resolved = resolved_r.scalar() or 0
+
+    # Per-severity breakdown (active only)
+    severity_counts = {}
+    for sev in VALID_SEVERITIES:
+        r = await db.execute(
+            select(func.count()).select_from(
+                select(Alert).where(Alert.severity == sev, Alert.status == "active").subquery()
+            )
+        )
+        severity_counts[sev] = r.scalar() or 0
+
+    return {
+        "data": {
+            "total": total,
+            "active": active,
+            "critical": critical,
+            "acknowledged": acknowledged,
+            "resolved": resolved,
+            "severityCounts": severity_counts,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
     }
 
 
@@ -63,6 +173,39 @@ async def list_alerts(
     }
 
 
+@router.post("", dependencies=[Depends(require_operator)])
+async def create_alert(
+    body: CreateAlertRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create an alert manually from the frontend."""
+    machine_name = MACHINE_NAMES.get(body.machineId, body.machineId)
+    alert = Alert(
+        machine_id=body.machineId,
+        machine_name=machine_name,
+        severity=body.severity,
+        status="active",
+        title=body.title,
+        message=body.message,
+        sensor_id=body.sensorId,
+        value=body.value,
+    )
+    db.add(alert)
+    await db.commit()
+    await db.refresh(alert)
+
+    alert_dict = _alert_to_dict(alert)
+
+    # Broadcast to all connected WebSocket clients
+    await ws_manager.broadcast_all({
+        "type": "alert",
+        "payload": alert_dict,
+    })
+
+    return {"data": alert_dict}
+
+
 @router.patch("/{alert_id}/acknowledge", dependencies=[Depends(require_operator)])
 async def acknowledge_alert(
     alert_id: str,
@@ -73,24 +216,42 @@ async def acknowledge_alert(
     alert = result.scalar_one_or_none()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
+    if alert.status == "acknowledged":
+        return {"data": _alert_to_dict(alert), "message": "Already acknowledged"}
+    if alert.status == "resolved":
+        raise HTTPException(status_code=400, detail="Cannot acknowledge a resolved alert")
     alert.status = "acknowledged"
     alert.acknowledged_at = datetime.utcnow()
     alert.acknowledged_by = current_user.name
     await db.commit()
-    return {"data": _alert_to_dict(alert)}
+
+    alert_dict = _alert_to_dict(alert)
+    await ws_manager.broadcast_all({
+        "type": "alert_updated",
+        "payload": alert_dict,
+    })
+    return {"data": alert_dict, "message": "Alert acknowledged successfully"}
 
 
 @router.patch("/{alert_id}/resolve", dependencies=[Depends(require_operator)])
 async def resolve_alert(
     alert_id: str,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(select(Alert).where(Alert.id == alert_id))
     alert = result.scalar_one_or_none()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
+    if alert.status == "resolved":
+        return {"data": _alert_to_dict(alert), "message": "Already resolved"}
     alert.status = "resolved"
     alert.resolved_at = datetime.utcnow()
     await db.commit()
-    return {"data": _alert_to_dict(alert)}
+
+    alert_dict = _alert_to_dict(alert)
+    await ws_manager.broadcast_all({
+        "type": "alert_updated",
+        "payload": alert_dict,
+    })
+    return {"data": alert_dict, "message": "Alert resolved successfully"}

@@ -24,3 +24,22 @@ export interface AlertListResponse {
   limit: number;
   pages: number;
 }
+
+export interface AlertSummary {
+  total: number;
+  active: number;
+  critical: number;
+  acknowledged: number;
+  resolved: number;
+  severityCounts: Record<string, number>;
+  timestamp: string;
+}
+
+export interface CreateAlertPayload {
+  machineId: string;
+  severity: AlertSeverity;
+  title: string;
+  message: string;
+  sensorId?: string;
+  value?: number;
+}

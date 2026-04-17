@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { useAlerts, useAcknowledgeAlert, useResolveAlert } from '../../hooks/useAlerts';
+import { useAlerts, useAlertSummary, useAcknowledgeAlert, useResolveAlert } from '../../hooks/useAlerts';
 import AlertPanel from '../../components/dashboard/AlertPanel';
+import ReportAlertModal from '../../components/dashboard/ReportAlertModal';
 import type { AlertSeverity, AlertStatus } from '../../types/alert.types';
 
 const SEVERITY_OPTIONS: { value: AlertSeverity | 'all'; label: string; icon: string; color: string }[] = [
@@ -57,6 +58,7 @@ const AlertsPage: React.FC = () => {
   const [severity, setSeverity] = useState<AlertSeverity | 'all'>('all');
   const [status, setStatus] = useState<AlertStatus | 'all'>('all');
   const [machineId, setMachineId] = useState('all');
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // Build query params
   const queryParams = useMemo(() => {
@@ -68,35 +70,60 @@ const AlertsPage: React.FC = () => {
   }, [severity, status, machineId]);
 
   const { data, isLoading } = useAlerts(queryParams);
+  const { data: summary } = useAlertSummary();
   const { mutate: acknowledge } = useAcknowledgeAlert();
   const { mutate: resolve } = useResolveAlert();
   const alerts = data?.items ?? [];
   const total = data?.total ?? 0;
 
-  // Summary counts (from current results)
-  const criticalCount = alerts.filter((a) => a.severity === 'critical').length;
-  const activeCount = alerts.filter((a) => a.status === 'active').length;
+  // Summary counts from dedicated endpoint
+  const criticalCount = summary?.critical ?? alerts.filter((a) => a.severity === 'critical').length;
+  const activeCount = summary?.active ?? alerts.filter((a) => a.status === 'active').length;
+  const acknowledgedCount = summary?.acknowledged ?? 0;
+  const resolvedCount = summary?.resolved ?? 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
-      <div>
-        <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
-          Alert Management
-        </h1>
-        <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
-          Monitor and manage system alerts across all machines
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
+            Alert Management
+          </h1>
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
+            Monitor, manage, and report alerts · auto-refreshes every 10s
+          </p>
+        </div>
+        <button
+          onClick={() => setShowReportModal(true)}
+          style={{
+            padding: '8px 18px',
+            fontSize: 13,
+            fontWeight: 700,
+            border: '1.5px solid #dc2626',
+            borderRadius: 8,
+            background: '#fef2f2',
+            color: '#dc2626',
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.color = '#fff'; }}
+          onMouseOut={(e) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#dc2626'; }}
+        >
+          + Report Alert
+        </button>
       </div>
 
       {/* Summary stats */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         {[
-          { label: 'Total Alerts', value: total, icon: '📊', color: '#1a56db' },
-          { label: 'Active', value: activeCount, icon: '●',
+          { label: 'Total Alerts', value: summary?.total ?? total, icon: '📊', color: '#1a56db' },
+          { label: 'Active', value: activeCount, icon: '🔴',
             color: activeCount > 0 ? '#dc2626' : '#059669' },
-          { label: 'Critical', value: criticalCount, icon: '⚠',
+          { label: 'Critical', value: criticalCount, icon: '⚠️',
             color: criticalCount > 0 ? '#dc2626' : '#059669' },
+          { label: 'Acknowledged', value: acknowledgedCount, icon: '✓', color: '#3b82f6' },
+          { label: 'Resolved', value: resolvedCount, icon: '✅', color: '#22c55e' },
         ].map((s) => (
           <div key={s.label} style={{
             padding: '12px 20px',
@@ -194,6 +221,10 @@ const AlertsPage: React.FC = () => {
           maxHeight="none"
           title={`Showing ${alerts.length} of ${total} alerts`}
         />
+      )}
+
+      {showReportModal && (
+        <ReportAlertModal onClose={() => setShowReportModal(false)} />
       )}
     </div>
   );

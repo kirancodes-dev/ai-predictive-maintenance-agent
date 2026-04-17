@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
 import DashboardOverview from '../../components/dashboard/DashboardOverview';
 import MachineGrid from '../../components/dashboard/MachineGrid';
@@ -6,8 +6,9 @@ import AlertPanel from '../../components/dashboard/AlertPanel';
 import FailurePredictionPanel from '../../components/dashboard/FailurePredictionPanel';
 import TechnicianAvailability from '../../components/dashboard/TechnicianAvailability';
 import LiveSensorCharts from '../../components/dashboard/LiveSensorCharts';
+import ReportAlertModal from '../../components/dashboard/ReportAlertModal';
 import { useMachineData } from '../../hooks/useMachineData';
-import { useAlerts, useAcknowledgeAlert, useResolveAlert } from '../../hooks/useAlerts';
+import { useAlerts, useAlertSummary, useAcknowledgeAlert, useResolveAlert } from '../../hooks/useAlerts';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { streamApi } from '../../services/api/streamApi';
 import type { SensorReadingDto } from '../../services/api/streamApi';
@@ -19,8 +20,10 @@ const DashboardPage: React.FC = () => {
   const qc = useQueryClient();
   const { data: machinesData, isLoading: machinesLoading } = useMachineData();
   const { data: alertsData } = useAlerts({ status: ['active'] });
+  const { data: summary } = useAlertSummary();
   const { mutate: acknowledge } = useAcknowledgeAlert();
   const { mutate: resolve } = useResolveAlert();
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const machines = machinesData?.items ?? [];
   const alerts = alertsData?.items ?? [];
@@ -50,19 +53,23 @@ const DashboardPage: React.FC = () => {
       toast.error(`⚠️ ${p.machineName}: Failure in ${label} — ${p.failureType}`,
         { duration: 8000, id: `pfa-${p.machineId}` });
       qc.invalidateQueries('alerts');
+      qc.invalidateQueries('alert-summary');
     }
     if (type === 'technician_assigned') {
-      toast.success(`${p.technicianName} auto-dispatched to ${p.machineName}`,
+      toast.success(`🔧 ${p.technicianName} dispatched → ${p.machineName}`,
         { duration: 6000, id: `ta-${p.machineId}` });
     }
-    if (type === 'alert') {
+    if (type === 'alert' || type === 'alert_updated') {
       const sev = p.severity as string;
-      const toastFn = sev === 'critical' ? toast.error : toast;
-      toastFn(`${p.machineName}: ${p.title}`, {
-        duration: sev === 'critical' ? 10000 : 5000,
-        id: `alert-${p.id}`,
-      });
+      if (type === 'alert') {
+        const toastFn = sev === 'critical' ? toast.error : toast;
+        toastFn(`🔔 ${p.machineName}: ${p.title}`, {
+          duration: sev === 'critical' ? 10000 : 5000,
+          id: `alert-${p.id}`,
+        });
+      }
       qc.invalidateQueries('alerts');
+      qc.invalidateQueries('alert-summary');
     }
   }, [qc]);
 
@@ -71,27 +78,95 @@ const DashboardPage: React.FC = () => {
   useWebSocket({ path: '/ws/PUMP_03', onMessage: handleWsMessage });
   useWebSocket({ path: '/ws/CONVEYOR_04', onMessage: handleWsMessage });
 
+  const totalMachines = machinesData?.total ?? 0;
   const onlineMachines = machines.filter((m) => m.status !== 'offline' && m.status !== 'maintenance').length;
   const criticalMachines = machines.filter((m) => m.riskLevel === 'critical' || m.status === 'critical').length;
+  const warningMachines = machines.filter((m) => m.riskLevel === 'high' || m.status === 'warning').length;
+
+  // Compute system health: 100 - (weighted penalties)
+  const healthScore = totalMachines > 0
+    ? Math.max(0, Math.round(100
+      - (criticalMachines * 25)
+      - (warningMachines * 10)
+      - ((totalMachines - onlineMachines) * 15)
+      - Math.min(20, (summary?.active ?? 0) * 2)))
+    : 100;
+
+  const healthColor = healthScore >= 80 ? '#059669' : healthScore >= 60 ? '#f59e0b' : '#dc2626';
+  const healthLabel = healthScore >= 80 ? 'Healthy' : healthScore >= 60 ? 'Needs Attention' : 'Critical';
 
   const stats = [
-    { label: 'Total Machines', value: machinesData?.total ?? 0, icon: 'M', color: '#1a56db' },
-    { label: 'Active Alerts',  value: alerts.length, icon: '!',
-      color: alerts.length > 0 ? '#dc2626' : '#059669' },
-    { label: 'Online',         value: onlineMachines, icon: '\u2713', color: '#059669' },
-    { label: 'Critical Risk',  value: criticalMachines, icon: '\u26a0',
-      color: criticalMachines > 0 ? '#dc2626' : '#059669' },
+    {
+      label: 'System Health',
+      value: `${healthScore}%`,
+      icon: '💚',
+      color: healthColor,
+      trend: healthLabel,
+    },
+    {
+      label: 'Total Machines',
+      value: totalMachines,
+      icon: '🏭',
+      color: '#1a56db',
+      trend: `${onlineMachines} online · ${totalMachines - onlineMachines} offline`,
+    },
+    {
+      label: 'Active Alerts',
+      value: summary?.active ?? alerts.length,
+      icon: '🔔',
+      color: (summary?.active ?? alerts.length) > 0 ? '#dc2626' : '#059669',
+      trend: summary
+        ? `${summary.critical} critical · ${summary.acknowledged} acknowledged`
+        : undefined,
+    },
+    {
+      label: 'Critical Risk',
+      value: criticalMachines,
+      icon: '⚠️',
+      color: criticalMachines > 0 ? '#dc2626' : '#059669',
+      trend: warningMachines > 0 ? `${warningMachines} high risk` : 'All within safe range',
+    },
   ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
-          Operations Dashboard
-        </h1>
-        <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
-          Real-time overview of factory operations and equipment health
-        </p>
+      {/* Header with Report Alert button */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
+            Operations Dashboard
+          </h1>
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
+            Real-time overview · auto-refreshes every 5s · alerts broadcast via WebSocket
+          </p>
+        </div>
+        <button
+          onClick={() => setShowReportModal(true)}
+          style={{
+            padding: '8px 18px',
+            fontSize: 13,
+            fontWeight: 700,
+            border: '1.5px solid #dc2626',
+            borderRadius: 8,
+            background: '#fef2f2',
+            color: '#dc2626',
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = '#dc2626';
+            e.currentTarget.style.color = '#fff';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = '#fef2f2';
+            e.currentTarget.style.color = '#dc2626';
+          }}
+        >
+          + Report Alert
+        </button>
       </div>
 
       <DashboardOverview stats={stats} />
@@ -115,6 +190,10 @@ const DashboardPage: React.FC = () => {
       </div>
 
       <TechnicianAvailability />
+
+      {showReportModal && (
+        <ReportAlertModal onClose={() => setShowReportModal(false)} />
+      )}
     </div>
   );
 };
