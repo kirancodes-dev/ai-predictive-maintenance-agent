@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 type Theme = 'light' | 'dark';
 
-const STORAGE_KEY = 'app_theme';
+const STORAGE_KEY = 'theme';
 
 export const useTheme = () => {
   const [theme, setTheme] = useState<Theme>(

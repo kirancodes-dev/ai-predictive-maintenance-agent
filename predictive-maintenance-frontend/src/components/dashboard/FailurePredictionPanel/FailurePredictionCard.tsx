@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { RichPrediction } from '../../../types/maintenance.types';
 
 const URGENCY_CONFIG = {
@@ -111,6 +112,22 @@ const FailurePredictionCard: React.FC<Props> = ({ prediction }) => {
       >
         {prediction.recommendation}
       </div>
+
+      {/* Agent link */}
+      <Link
+        to={`/agent?machine=${prediction.machineId}`}
+        style={{
+          display: 'block',
+          marginTop: '0.5rem',
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: 'var(--color-primary, #1a56db)',
+          textDecoration: 'none',
+          textAlign: 'right',
+        }}
+      >
+        View in AI Agent →
+      </Link>
     </div>
   );
 };

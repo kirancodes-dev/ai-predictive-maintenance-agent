@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import './Header.css';
 import { useTheme } from '../../../hooks/useTheme';
 import { useAuth } from '../../../hooks/useAuth';
+import NotificationBell from '../NotificationBell';
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -44,6 +45,7 @@ const Header: React.FC = () => {
         >
           {theme === 'light' ? '🌙' : '☀️'}
         </button>
+        <NotificationBell />
         {user && (
           <div className="header__user">
             <div className="header__avatar">{getInitials(user.name)}</div>

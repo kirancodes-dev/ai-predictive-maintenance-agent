@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from 'react-query';
 import DashboardOverview from '../../components/dashboard/DashboardOverview';
 import MachineGrid from '../../components/dashboard/MachineGrid';
@@ -8,6 +9,7 @@ import TechnicianAvailability from '../../components/dashboard/TechnicianAvailab
 import LiveSensorCharts from '../../components/dashboard/LiveSensorCharts';
 import ReportAlertModal from '../../components/dashboard/ReportAlertModal';
 import SystemOverviewPie from '../../components/dashboard/SystemOverviewPie';
+import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
 import { useMachineData } from '../../hooks/useMachineData';
 import { useAlerts, useAlertSummary, useAcknowledgeAlert, useResolveAlert } from '../../hooks/useAlerts';
 import { useWebSocket } from '../../hooks/useWebSocket';
@@ -141,15 +143,36 @@ const DashboardPage: React.FC = () => {
             Real-time overview · auto-refreshes every 5s · alerts broadcast via WebSocket
           </p>
         </div>
-        <button
-          onClick={() => setShowReportModal(true)}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <Link
+            to="/agent"
+            style={{
+              padding: '8px 18px',
+              fontSize: 13,
+              fontWeight: 600,
+              border: '1px solid var(--color-border)',
+              borderRadius: 8,
+              background: 'var(--color-surface)',
+              color: 'var(--color-primary)',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              textDecoration: 'none',
+            }}
+          >
+            🤖 AI Agent
+          </Link>
+          <button
+            onClick={() => setShowReportModal(true)}
           style={{
             padding: '8px 18px',
             fontSize: 13,
             fontWeight: 700,
             border: '1.5px solid #dc2626',
             borderRadius: 8,
-            background: '#fef2f2',
+            background: 'rgba(220, 38, 38, 0.08)',
             color: '#dc2626',
             cursor: 'pointer',
             transition: 'all 0.15s',
@@ -162,12 +185,13 @@ const DashboardPage: React.FC = () => {
             e.currentTarget.style.color = '#fff';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.background = '#fef2f2';
+            e.currentTarget.style.background = 'rgba(220, 38, 38, 0.08)';
             e.currentTarget.style.color = '#dc2626';
           }}
         >
           + Report Alert
         </button>
+        </div>
       </div>
 
       <DashboardOverview stats={stats} />
@@ -189,6 +213,7 @@ const DashboardPage: React.FC = () => {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <SystemOverviewPie machines={machines} />
+          <ActivityTimeline />
           <AlertPanel alerts={alerts} onAcknowledge={acknowledge} onResolve={resolve} />
         </div>
       </div>

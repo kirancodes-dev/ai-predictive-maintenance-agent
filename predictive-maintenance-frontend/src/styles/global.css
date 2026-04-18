@@ -84,9 +84,13 @@ button:active { transform: scale(0.97); }
 }
 
 /* ── Dark mode overrides for inline-styled components ── */
+
+/* --- Backgrounds --- */
 [data-theme="dark"] div[style*="background: #fff"],
 [data-theme="dark"] div[style*="background: '#fff'"],
-[data-theme="dark"] div[style*="background: rgb(255, 255, 255)"] {
+[data-theme="dark"] div[style*="background: rgb(255, 255, 255)"],
+[data-theme="dark"] form[style*="background: #fff"],
+[data-theme="dark"] div[style*="background: #ffffff"] {
   background: var(--color-surface) !important;
 }
 
@@ -95,63 +99,183 @@ button:active { transform: scale(0.97); }
 [data-theme="dark"] div[style*="background: #f3f4f6"],
 [data-theme="dark"] div[style*="background: '#f3f4f6'"],
 [data-theme="dark"] div[style*="background: #f0f2f5"],
-[data-theme="dark"] div[style*="background: #f1f5f9"] {
-  background: var(--color-surface) !important;
+[data-theme="dark"] div[style*="background: #f1f5f9"],
+[data-theme="dark"] div[style*="background: #f8f9fb"],
+[data-theme="dark"] div[style*="background: #f9fafb"] {
+  background: var(--color-surface-alt) !important;
 }
 
+/* --- Borders --- */
 [data-theme="dark"] div[style*="border: 1px solid #e2e8f0"],
 [data-theme="dark"] div[style*="border: 1px solid #dfe3e8"],
 [data-theme="dark"] div[style*="border: 1.5px solid #e2e8f0"],
-[data-theme="dark"] div[style*="border: 1px solid #e5e7eb"] {
+[data-theme="dark"] div[style*="border: 1px solid #e5e7eb"],
+[data-theme="dark"] div[style*="border: 1px solid #d1d5db"],
+[data-theme="dark"] form[style*="border: 1px solid #e2e8f0"],
+[data-theme="dark"] form[style*="border: 1px solid #e5e7eb"] {
   border-color: var(--color-border) !important;
 }
 
+/* --- Muted text --- */
 [data-theme="dark"] span[style*="color: #94a3b8"],
 [data-theme="dark"] div[style*="color: #94a3b8"],
 [data-theme="dark"] p[style*="color: #94a3b8"],
-[data-theme="dark"] label[style*="color: #94a3b8"] {
-  color: var(--color-muted) !important;
-}
-
+[data-theme="dark"] label[style*="color: #94a3b8"],
 [data-theme="dark"] span[style*="color: #64748b"],
 [data-theme="dark"] div[style*="color: #64748b"],
 [data-theme="dark"] span[style*="color: #6b7280"],
 [data-theme="dark"] div[style*="color: #6b7280"],
 [data-theme="dark"] p[style*="color: #64748b"],
-[data-theme="dark"] p[style*="color: #6b7280"] {
+[data-theme="dark"] p[style*="color: #6b7280"],
+[data-theme="dark"] label[style*="color: #64748b"],
+[data-theme="dark"] label[style*="color: #6b7280"] {
   color: var(--color-muted) !important;
 }
 
+/* --- Dark text → light text --- */
+[data-theme="dark"] div[style*="color: #0f172a"],
+[data-theme="dark"] span[style*="color: #0f172a"],
+[data-theme="dark"] div[style*="color: #1a1d21"],
+[data-theme="dark"] span[style*="color: #1a1d21"],
+[data-theme="dark"] div[style*="color: #111827"],
+[data-theme="dark"] span[style*="color: #111827"],
+[data-theme="dark"] h1[style*="color: #1a1d21"],
+[data-theme="dark"] h2[style*="color: #1a1d21"],
+[data-theme="dark"] h3[style*="color: #1a1d21"],
+[data-theme="dark"] div[style*="color: #334155"],
+[data-theme="dark"] span[style*="color: #334155"],
+[data-theme="dark"] div[style*="color: #1e293b"],
+[data-theme="dark"] span[style*="color: #1e293b"] {
+  color: var(--color-text) !important;
+}
+
+/* --- Secondary text --- */
+[data-theme="dark"] label[style*="color: #44495a"],
+[data-theme="dark"] div[style*="color: #44495a"],
+[data-theme="dark"] span[style*="color: #44495a"],
+[data-theme="dark"] p[style*="color: #44495a"] {
+  color: var(--color-text-secondary) !important;
+}
+
+/* --- Inputs --- */
 [data-theme="dark"] input[style*="border: 1px solid #e2e8f0"],
-[data-theme="dark"] input[style*="border: 1px solid #d1d5db"] {
+[data-theme="dark"] input[style*="border: 1px solid #d1d5db"],
+[data-theme="dark"] input[style*="border: 1px solid #e5e7eb"] {
   background: var(--color-input-bg) !important;
   border-color: var(--color-input-border) !important;
   color: var(--color-text) !important;
 }
 
-[data-theme="dark"] button[style*="border: 1px solid #e2e8f0"],
-[data-theme="dark"] button[style*="border: 1px solid #e5e7eb"] {
-  border-color: var(--color-border) !important;
-  color: var(--color-muted) !important;
-}
-
-[data-theme="dark"] div[style*="background: #e2e8f0"],
-[data-theme="dark"] div[style*="background: '#e2e8f0'"],
-[data-theme="dark"] div[style*="background: #dfe3e8"] {
-  background: var(--color-border) !important;
-}
-
-[data-theme="dark"] div[style*="color: #0f172a"],
-[data-theme="dark"] span[style*="color: #0f172a"],
-[data-theme="dark"] div[style*="color: #1a1d21"],
-[data-theme="dark"] span[style*="color: #1a1d21"] {
+[data-theme="dark"] input[style*="background: #fff"],
+[data-theme="dark"] input[style*="background: #ffffff"] {
+  background: var(--color-input-bg) !important;
   color: var(--color-text) !important;
 }
 
-/* Recharts dark mode support */
-[data-theme="dark"] .recharts-cartesian-grid line {
-  stroke: #1f2937 !important;
+[data-theme="dark"] input[style*="color: #1a1d21"] {
+  color: var(--color-text) !important;
 }
+
+/* --- Selects --- */
+[data-theme="dark"] select[style*="border: 1px solid"],
+[data-theme="dark"] select {
+  background: var(--color-input-bg) !important;
+  border-color: var(--color-input-border) !important;
+  color: var(--color-text) !important;
+}
+
+/* --- Buttons (the critical fix) --- */
+[data-theme="dark"] button[style*="border: 1px solid #e2e8f0"],
+[data-theme="dark"] button[style*="border: 1px solid #e5e7eb"],
+[data-theme="dark"] button[style*="border: 1px solid #d1d5db"],
+[data-theme="dark"] button[style*="border: 1.5px solid #e2e8f0"] {
+  border-color: var(--color-border) !important;
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] button[style*="background: #fff"],
+[data-theme="dark"] button[style*="background: #ffffff"],
+[data-theme="dark"] button[style*="background: '#fff'"] {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] button[style*="background: transparent"] {
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] button[style*="color: #334155"],
+[data-theme="dark"] button[style*="color: #1e293b"],
+[data-theme="dark"] button[style*="color: #1a1d21"] {
+  color: var(--color-text) !important;
+}
+
+/* Report Alert button dark mode */
+[data-theme="dark"] button[style*="background: #fef2f2"] {
+  background: rgba(220, 38, 38, 0.1) !important;
+}
+
+/* Divider backgrounds */
+[data-theme="dark"] div[style*="background: #e2e8f0"],
+[data-theme="dark"] div[style*="background: '#e2e8f0'"],
+[data-theme="dark"] div[style*="background: #dfe3e8"],
+[data-theme="dark"] div[style*="background: #e5e7eb"] {
+  background: var(--color-border) !important;
+}
+
+/* Tab borders */
+[data-theme="dark"] div[style*="border-bottom: 1px solid #e2e8f0"],
+[data-theme="dark"] div[style*="border-bottom: 1px solid #e5e7eb"] {
+  border-bottom-color: var(--color-border) !important;
+}
+
+/* Table borders */
+[data-theme="dark"] tr[style*="border-bottom: 2px solid #e2e8f0"],
+[data-theme="dark"] tr[style*="border-bottom: 1px solid #f1f5f9"],
+[data-theme="dark"] tr[style*="border-bottom: 1px solid #e2e8f0"] {
+  border-bottom-color: var(--color-border) !important;
+}
+
+/* Prediction urgency badges in dark mode */
+[data-theme="dark"] span[style*="background: #fef2f2"] {
+  background: rgba(220, 38, 38, 0.15) !important;
+  color: #f87171 !important;
+}
+[data-theme="dark"] span[style*="background: #fff7ed"] {
+  background: rgba(249, 115, 22, 0.15) !important;
+  color: #fb923c !important;
+}
+[data-theme="dark"] span[style*="background: #f0fdf4"] {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] span[style*="background: #fffbeb"] {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+}
+[data-theme="dark"] span[style*="background: #eff6ff"] {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60a5fa !important;
+}
+[data-theme="dark"] span[style*="background: #f5f3ff"] {
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: #a78bfa !important;
+}
+[data-theme="dark"] span[style*="background: #f8fafc"] {
+  background: var(--color-surface-alt) !important;
+}
+
+/* Pre/code blocks */
+[data-theme="dark"] pre[style*="color: #334155"] {
+  color: var(--color-text) !important;
+}
+
+/* CartesianGrid in Recharts */
+[data-theme="dark"] .recharts-cartesian-grid line {
+  stroke: var(--color-border) !important;
+}
+
+/* Recharts dark mode support */
 [data-theme="dark"] .recharts-text {
   fill: #9ca3af !important;
 }

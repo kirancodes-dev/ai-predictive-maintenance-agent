@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from 'react-query';
 import { predictionApi } from '../../../services/api/predictionApi';
 import FailurePredictionCard from './FailurePredictionCard';
+import FailureTimeline from './FailureTimeline';
 import type { RichPrediction } from '../../../types/maintenance.types';
 
 const FailurePredictionPanel: React.FC = () => {
@@ -62,6 +63,9 @@ const FailurePredictionPanel: React.FC = () => {
           {predictions.length} machine(s) monitored — all within safe operational range.
         </p>
       )}
+
+      {/* Visual timeline showing time-to-failure for all predictions */}
+      {predictions.length > 0 && <FailureTimeline predictions={predictions} />}
     </section>
   );
 };

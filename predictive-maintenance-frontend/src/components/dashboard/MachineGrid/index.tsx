@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { Machine } from '../../../types/machine.types';
 import { SENSOR_CONFIG, KNOWN_SENSOR_TYPES, type KnownSensorType } from '../../monitoring/charts/chartConfig';
@@ -56,9 +56,55 @@ interface Props {
   liveData?: Record<string, SensorReadingDto[]>;
 }
 
+/* ── Mini SVG Sparkline ── */
+const Sparkline: React.FC<{ values: number[]; color: string; width?: number; height?: number }> = ({
+  values, color, width = 60, height = 20,
+}) => {
+  if (values.length < 2) return null;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const points = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * width;
+    const y = height - ((v - min) / range) * (height - 2) - 1;
+    return `${x},${y}`;
+  }).join(' ');
+  return (
+    <svg width={width} height={height} style={{ display: 'block' }}>
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
 const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) => {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sirenRef = useRef<OscillatorNode | null>(null);
+
+  // Build per-machine, per-sensor-type history arrays for sparklines
+  const sparkData = useMemo(() => {
+    const result: Record<string, Record<string, number[]>> = {};
+    for (const [machineId, readings] of Object.entries(liveData)) {
+      result[machineId] = {};
+      for (const r of readings) {
+        if (KNOWN_SENSOR_TYPES.includes(r.type as KnownSensorType)) {
+          if (!result[machineId][r.type]) result[machineId][r.type] = [];
+          result[machineId][r.type].push(r.value);
+        }
+      }
+      // Keep last 20 values per sensor type
+      for (const type of Object.keys(result[machineId])) {
+        result[machineId][type] = result[machineId][type].slice(-20);
+      }
+    }
+    return result;
+  }, [liveData]);
 
   // Siren toggle — plays a pulsing tone via Web Audio API
   const toggleSiren = useCallback(() => {
@@ -87,8 +133,8 @@ const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) =>
     osc.onended = () => { sirenRef.current = null; };
   }, []);
 
-  if (isLoading) return <p style={{ color: '#94a3b8', fontSize: 13 }}>Loading machines…</p>;
-  if (!machines.length) return <p style={{ color: '#94a3b8', fontSize: 13 }}>No machines found.</p>;
+  if (isLoading) return <p style={{ color: 'var(--color-muted)', fontSize: 13 }}>Loading machines…</p>;
+  if (!machines.length) return <p style={{ color: 'var(--color-muted)', fontSize: 13 }}>No machines found.</p>;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
@@ -188,8 +234,12 @@ const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) =>
                       {r ? r.value.toFixed(1) : '—'}
                       <span style={{ fontSize: 10, fontWeight: 400, marginLeft: 2 }}>{cfg.unit}</span>
                     </div>
+                    {/* Sparkline */}
+                    {sparkData[m.id]?.[type]?.length > 2 && (
+                      <Sparkline values={sparkData[m.id][type]} color={valColor} />
+                    )}
                     {pct !== null && (
-                      <div style={{ height: 2, borderRadius: 2, background: '#e2e8f0', marginTop: 3, overflow: 'hidden' }}>
+                      <div style={{ height: 2, borderRadius: 2, background: 'var(--color-border)', marginTop: 3, overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: valColor,
                                       transition: 'width 0.3s ease' }} />
                       </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import PredictiveInsights from '../../components/maintenance/PredictiveInsights';
+import MaintenanceHistory from '../../components/maintenance/MaintenanceHistory';
 import TechnicianAvailability from '../../components/dashboard/TechnicianAvailability';
 import { useQuery } from 'react-query';
 import { maintenanceApi } from '../../services/api/maintenanceApi';
@@ -133,6 +134,14 @@ const MaintenancePage: React.FC = () => {
           </div>
         </div>
         <TechnicianAvailability />
+      </div>
+
+      {/* Maintenance History Table */}
+      <div style={{
+        background: 'var(--color-surface)', borderRadius: 12, padding: '1.25rem',
+        border: '1px solid var(--color-border)',
+      }}>
+        <MaintenanceHistory />
       </div>
     </div>
   );

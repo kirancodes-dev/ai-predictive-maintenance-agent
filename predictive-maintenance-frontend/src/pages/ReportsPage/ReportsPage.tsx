@@ -152,6 +152,48 @@ const ReportsPage: React.FC = () => {
 
   const [showJsonPreview, setShowJsonPreview] = React.useState(false);
 
+  const downloadCsv = useCallback(() => {
+    const rows: string[][] = [];
+    // Machine summary
+    rows.push(['=== MACHINE SUMMARY ===']);
+    rows.push(['ID', 'Name', 'Status', 'Risk Score', 'Risk Level', 'Location', 'Model']);
+    (machines || []).forEach((m: any) => {
+      rows.push([m.id, m.name, m.status, String(m.riskScore), m.riskLevel || '', m.location || '', m.model || '']);
+    });
+    rows.push([]);
+    // Predictions
+    rows.push(['=== FAILURE PREDICTIONS ===']);
+    rows.push(['Machine ID', 'Machine Name', 'Hours Remaining', 'Confidence', 'Failure Type', 'Urgency', 'Recommendation']);
+    (predictions || []).forEach((p: any) => {
+      rows.push([p.machine_id, p.machine_name, String(p.estimated_hours_remaining?.toFixed(1) || ''), String((p.confidence * 100).toFixed(0) + '%'), p.failure_type, p.urgency, p.recommendation || '']);
+    });
+    rows.push([]);
+    // Alerts
+    rows.push(['=== ALERTS ===']);
+    rows.push(['ID', 'Machine', 'Severity', 'Status', 'Message', 'Created At']);
+    (alerts || []).forEach((a: any) => {
+      rows.push([a.id, a.machineId || a.machineName || '', a.severity, a.status, (a.message || '').replace(/,/g, ';'), a.createdAt || '']);
+    });
+    rows.push([]);
+    // Maintenance
+    rows.push(['=== MAINTENANCE RECORDS ===']);
+    rows.push(['ID', 'Title', 'Machine', 'Type', 'Status', 'Scheduled Date']);
+    (maintenance || []).forEach((m: any) => {
+      rows.push([m.id, m.title || '', m.machineName || '', m.type || '', m.status || '', m.scheduledDate || '']);
+    });
+
+    const csvContent = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `maintenance-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [machines, predictions, alerts, maintenance]);
+
   const kpiStyle = {
     background: 'var(--color-surface, #fff)', borderRadius: 10, padding: '1.25rem',
     border: '1px solid var(--color-border, #e2e8f0)', textAlign: 'center' as const,
@@ -164,7 +206,7 @@ const ReportsPage: React.FC = () => {
         <div>
           <h1 style={{ fontSize: '1.375rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>Reports & Analytics</h1>
           <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
-            System health overview and exportable JSON reports
+            System health overview and exportable reports
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -180,6 +222,20 @@ const ReportsPage: React.FC = () => {
             }}
           >
             {'{ }'} {showJsonPreview ? 'Hide JSON' : 'Preview JSON'}
+          </button>
+          <button
+            onClick={downloadCsv}
+            style={{
+              padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              border: '1px solid #22c55e',
+              background: 'rgba(34,197,94,0.08)', color: '#22c55e',
+              cursor: 'pointer', transition: 'all 0.15s',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.background = '#22c55e'; e.currentTarget.style.color = '#fff'; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(34,197,94,0.08)'; e.currentTarget.style.color = '#22c55e'; }}
+          >
+            📊 Export CSV
           </button>
           <button
             onClick={downloadJson}
@@ -291,7 +347,7 @@ const ReportsPage: React.FC = () => {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No data</div>
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-muted)' }}>No data</div>
           )}
         </div>
 
@@ -300,7 +356,7 @@ const ReportsPage: React.FC = () => {
           <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem' }}>Prediction Urgency Breakdown</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={urgencyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis dataKey="urgency" fontSize={11} />
               <YAxis fontSize={11} allowDecimals={false} />
               <Tooltip />
@@ -316,7 +372,7 @@ const ReportsPage: React.FC = () => {
           <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem' }}>Alert Severity Distribution</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={severityData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis dataKey="severity" fontSize={11} />
               <YAxis fontSize={11} allowDecimals={false} />
               <Tooltip />
@@ -339,7 +395,7 @@ const ReportsPage: React.FC = () => {
                   {mlStatus.model_ready ? 'Model Ready' : 'Model Not Trained'}
                 </span>
               </div>
-              <div style={{ color: '#64748b', display: 'grid', gap: 4 }}>
+              <div style={{ color: 'var(--color-muted)', display: 'grid', gap: 4 }}>
                 <div>Features: {mlStatus.feature_columns?.join(', ')}</div>
                 {mlStatus.feature_stats && Object.entries(mlStatus.feature_stats).map(([k, v]: [string, any]) => (
                   <div key={k}>{k}: mean={v.mean?.toFixed(2)}, std={v.std?.toFixed(2)}</div>
@@ -347,7 +403,7 @@ const ReportsPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div style={{ color: '#94a3b8' }}>Loading...</div>
+            <div style={{ color: 'var(--color-muted)' }}>Loading...</div>
           )}
         </div>
       </div>
@@ -358,7 +414,7 @@ const ReportsPage: React.FC = () => {
           <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem' }}>All Predictions</h3>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+              <tr style={{ borderBottom: '2px solid var(--color-border)', textAlign: 'left' }}>
                 <th style={{ padding: '0.5rem' }}>Machine</th>
                 <th style={{ padding: '0.5rem' }}>Hours Left</th>
                 <th style={{ padding: '0.5rem' }}>Confidence</th>
@@ -367,8 +423,8 @@ const ReportsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {predictions.map((p: any, i: number) => (
-                <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+              {predictions.map((p: any) => (
+                <tr key={p.machine_id || p.machine_name} style={{ borderBottom: '1px solid var(--color-border)' }}>
                   <td style={{ padding: '0.5rem' }}>{p.machine_name}</td>
                   <td style={{ padding: '0.5rem' }}>{p.estimated_hours_remaining?.toFixed(1)}</td>
                   <td style={{ padding: '0.5rem' }}>{(p.confidence * 100).toFixed(0)}%</td>
@@ -376,8 +432,12 @@ const ReportsPage: React.FC = () => {
                   <td style={{ padding: '0.5rem' }}>
                     <span style={{
                       padding: '2px 8px', borderRadius: 4, fontSize: '0.7rem', fontWeight: 600,
-                      background: p.urgency === 'critical' || p.urgency === 'imminent' ? '#fef2f2' : p.urgency === 'high' ? '#fff7ed' : '#f0fdf4',
-                      color: p.urgency === 'critical' || p.urgency === 'imminent' ? '#991b1b' : p.urgency === 'high' ? '#9a3412' : '#166534',
+                      background: p.urgency === 'critical' || p.urgency === 'imminent'
+                        ? 'rgba(239,68,68,0.12)' : p.urgency === 'high'
+                        ? 'rgba(249,115,22,0.12)' : 'rgba(16,185,129,0.12)',
+                      color: p.urgency === 'critical' || p.urgency === 'imminent'
+                        ? '#ef4444' : p.urgency === 'high'
+                        ? '#f97316' : '#10b981',
                     }}>
                       {p.urgency?.toUpperCase()}
                     </span>

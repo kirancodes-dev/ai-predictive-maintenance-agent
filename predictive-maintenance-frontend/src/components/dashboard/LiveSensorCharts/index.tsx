@@ -100,7 +100,7 @@ const MachineCard: React.FC<{ machineId: string }> = ({ machineId }) => {
                 </span>
               )}
             </div>
-            <span style={{ fontSize: 11, color: '#94a3b8' }}>
+            <span style={{ fontSize: 11, color: 'var(--color-muted)' }}>
               {isConnected ? 'Live' : 'Offline'} · {readings.length} readings
             </span>
           </div>
@@ -123,7 +123,7 @@ const MachineCard: React.FC<{ machineId: string }> = ({ machineId }) => {
                 }}>
                   {latest ? latest.value.toFixed(1) : '—'}
                 </span>
-                <span style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: 9, color: 'var(--color-muted)', textTransform: 'uppercase' }}>
                   {cfg.label}
                 </span>
               </div>

@@ -28,7 +28,8 @@ const LoginPage: React.FC = () => {
       style={{
         minHeight: '100vh',
         display: 'flex',
-        background: '#f0f2f5',
+        background: 'var(--color-bg)',
+        transition: 'background 0.2s',
       }}
     >
       {/* Left panel — branding */}
@@ -124,19 +125,19 @@ const LoginPage: React.FC = () => {
         >
           <div style={{ marginBottom: '0.5rem' }}>
             <h1 style={{
-              fontSize: '1.5rem', fontWeight: 700, color: '#1a1d21',
+              fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text)',
               margin: '0 0 6px', letterSpacing: '-0.02em',
             }}>
               Welcome back
             </h1>
-            <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
+            <p style={{ fontSize: 14, color: 'var(--color-muted)', margin: 0 }}>
               Sign in to your account to continue
             </p>
           </div>
 
           <div>
             <label style={{
-              fontSize: 13, fontWeight: 600, color: '#44495a', display: 'block', marginBottom: 6,
+              fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 6,
             }}>
               Email address
             </label>
@@ -148,20 +149,20 @@ const LoginPage: React.FC = () => {
                 width: '100%',
                 padding: '0.65rem 0.875rem',
                 borderRadius: 8,
-                border: '1px solid #d1d5db',
-                background: '#fff',
-                color: '#1a1d21',
+                border: '1px solid var(--color-input-border)',
+                background: 'var(--color-input-bg)',
+                color: 'var(--color-text)',
                 fontSize: 14,
                 boxSizing: 'border-box',
                 transition: 'border-color 0.15s, box-shadow 0.15s',
                 outline: 'none',
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#1a56db';
+                e.currentTarget.style.borderColor = 'var(--color-primary)';
                 e.currentTarget.style.boxShadow = '0 0 0 3px rgba(26,86,219,0.08)';
               }}
               onBlur={(e) => {
-                e.currentTarget.style.borderColor = '#d1d5db';
+                e.currentTarget.style.borderColor = '';
                 e.currentTarget.style.boxShadow = 'none';
               }}
             />
@@ -169,7 +170,7 @@ const LoginPage: React.FC = () => {
 
           <div>
             <label style={{
-              fontSize: 13, fontWeight: 600, color: '#44495a', display: 'block', marginBottom: 6,
+              fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 6,
             }}>
               Password
             </label>
@@ -181,20 +182,20 @@ const LoginPage: React.FC = () => {
                 width: '100%',
                 padding: '0.65rem 0.875rem',
                 borderRadius: 8,
-                border: '1px solid #d1d5db',
-                background: '#fff',
-                color: '#1a1d21',
+                border: '1px solid var(--color-input-border)',
+                background: 'var(--color-input-bg)',
+                color: 'var(--color-text)',
                 fontSize: 14,
                 boxSizing: 'border-box',
                 transition: 'border-color 0.15s, box-shadow 0.15s',
                 outline: 'none',
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#1a56db';
+                e.currentTarget.style.borderColor = 'var(--color-primary)';
                 e.currentTarget.style.boxShadow = '0 0 0 3px rgba(26,86,219,0.08)';
               }}
               onBlur={(e) => {
-                e.currentTarget.style.borderColor = '#d1d5db';
+                e.currentTarget.style.borderColor = '';
                 e.currentTarget.style.boxShadow = 'none';
               }}
             />
@@ -207,7 +208,7 @@ const LoginPage: React.FC = () => {
               padding: '0.7rem',
               borderRadius: 8,
               border: 'none',
-              background: loading ? '#9ca3af' : '#1a56db',
+              background: loading ? 'var(--color-muted)' : 'var(--color-primary)',
               color: '#fff',
               fontWeight: 600,
               fontSize: 14,
@@ -217,7 +218,7 @@ const LoginPage: React.FC = () => {
               letterSpacing: '0.01em',
             }}
             onMouseOver={(e) => { if (!loading) e.currentTarget.style.background = '#1e40af'; }}
-            onMouseOut={(e) => { if (!loading) e.currentTarget.style.background = '#1a56db'; }}
+            onMouseOut={(e) => { if (!loading) e.currentTarget.style.background = ''; }}
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
@@ -225,12 +226,12 @@ const LoginPage: React.FC = () => {
           <div style={{
             padding: '0.75rem 1rem',
             borderRadius: 8,
-            background: '#f8f9fb',
-            border: '1px solid #e5e7eb',
+            background: 'var(--color-surface-alt)',
+            border: '1px solid var(--color-border)',
             fontSize: 12,
-            color: '#6b7280',
+            color: 'var(--color-muted)',
           }}>
-            <div style={{ fontWeight: 600, marginBottom: 4, color: '#44495a' }}>Demo Credentials</div>
+            <div style={{ fontWeight: 600, marginBottom: 4, color: 'var(--color-text-secondary)' }}>Demo Credentials</div>
             <div>Email: admin@factory.com</div>
             <div>Password: Admin@123</div>
           </div>

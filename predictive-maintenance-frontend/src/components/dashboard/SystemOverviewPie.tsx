@@ -54,7 +54,7 @@ const SystemOverviewPie: React.FC<Props> = ({ machines }) => {
     return (
       <div style={{ background: 'var(--color-surface, #fff)', borderRadius: 12, padding: '1.25rem', border: '1px solid var(--color-border, #e2e8f0)' }}>
         <h3 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: 8 }}>System Overview</h3>
-        <p style={{ color: '#94a3b8', fontSize: 13 }}>No machines</p>
+        <p style={{ color: 'var(--color-muted)', fontSize: 13 }}>No machines</p>
       </div>
     );
   }
@@ -92,7 +92,7 @@ const SystemOverviewPie: React.FC<Props> = ({ machines }) => {
           <text x={CENTER} y={CENTER - 6} textAnchor="middle" fontSize={22} fontWeight={800} fill="var(--color-text, #0f172a)">
             {total}
           </text>
-          <text x={CENTER} y={CENTER + 12} textAnchor="middle" fontSize={10} fill="#94a3b8">
+          <text x={CENTER} y={CENTER + 12} textAnchor="middle" fontSize={10} fill="var(--color-muted)">
             machines
           </text>
         </svg>

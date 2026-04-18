@@ -40,7 +40,7 @@ const TechnicianAvailability: React.FC = () => {
         </span>
       </div>
 
-      {isLoading && <p style={{ color: '#888', fontSize: '0.875rem' }}>Loading team…</p>}
+      {isLoading && <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>Loading team…</p>}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         {/* On-shift & available */}

@@ -1,10 +1,14 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
+import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuthContext } from '../context/AuthContext';
 import Header from '../components/common/Header';
 import Sidebar from '../components/common/Sidebar';
+import PageTransition from '../components/common/PageTransition';
+import CommandPalette from '../components/common/CommandPalette';
+import KeyboardShortcuts from '../components/common/KeyboardShortcuts';
 
 const DashboardPage       = lazy(() => import('../pages/DashboardPage'));
 const AlertsPage          = lazy(() => import('../pages/AlertsPage'));
@@ -25,6 +29,7 @@ const queryClient = new QueryClient({
 
 const ProtectedLayout: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthContext();
+  const location = useLocation();
   if (isLoading) return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -52,6 +57,8 @@ const ProtectedLayout: React.FC = () => {
       <Sidebar />
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
         <Header />
+        <CommandPalette />
+        <KeyboardShortcuts />
         <main style={{
           flex: 1, padding: '1.75rem 2rem', background: 'var(--color-bg)',
           minHeight: 'calc(100vh - 56px)', overflowY: 'auto',
@@ -61,19 +68,23 @@ const ProtectedLayout: React.FC = () => {
           <Suspense fallback={
             <div style={{ padding: '2rem', color: 'var(--color-muted)', fontSize: 14 }}>Loading…</div>
           }>
-            <Routes>
-              <Route path="/"            element={<DashboardPage />} />
-              <Route path="/agent"       element={<AgentDashboardPage />} />
-              <Route path="/machines/:id" element={<MachineDetailPage />} />
-              <Route path="/live"         element={<LiveMonitoringPage />} />
-              <Route path="/history"      element={<HistoryPage />} />
-              <Route path="/monitoring"  element={<MonitoringPage />} />
-              <Route path="/alerts"      element={<AlertsPage />} />
-              <Route path="/maintenance" element={<MaintenancePage />} />
-              <Route path="/reports"     element={<ReportsPage />} />
-              <Route path="/settings"    element={<SettingsPage />} />
-              <Route path="*"            element={<NotFoundPage />} />
-            </Routes>
+            <AnimatePresence mode="wait">
+              <PageTransition key={location.pathname}>
+                <Routes location={location}>
+                  <Route path="/"            element={<DashboardPage />} />
+                  <Route path="/agent"       element={<AgentDashboardPage />} />
+                  <Route path="/machines/:id" element={<MachineDetailPage />} />
+                  <Route path="/live"         element={<LiveMonitoringPage />} />
+                  <Route path="/history"      element={<HistoryPage />} />
+                  <Route path="/monitoring"  element={<MonitoringPage />} />
+                  <Route path="/alerts"      element={<AlertsPage />} />
+                  <Route path="/maintenance" element={<MaintenancePage />} />
+                  <Route path="/reports"     element={<ReportsPage />} />
+                  <Route path="/settings"    element={<SettingsPage />} />
+                  <Route path="*"            element={<NotFoundPage />} />
+                </Routes>
+              </PageTransition>
+            </AnimatePresence>
           </Suspense>
         </main>
       </div>

@@ -59,6 +59,7 @@ const AlertsPage: React.FC = () => {
   const [status, setStatus] = useState<AlertStatus | 'all'>('all');
   const [machineId, setMachineId] = useState('all');
   const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Build query params
   const queryParams = useMemo(() => {
@@ -82,6 +83,37 @@ const AlertsPage: React.FC = () => {
   const acknowledgedCount = summary?.acknowledged ?? 0;
   const resolvedCount = summary?.resolved ?? 0;
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    const actionable = alerts.filter(a => a.status !== 'resolved');
+    if (selectedIds.size === actionable.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(actionable.map(a => a.id)));
+  };
+
+  const bulkAcknowledge = () => {
+    selectedIds.forEach(id => {
+      const a = alerts.find(x => x.id === id);
+      if (a && a.status === 'active') acknowledge(id);
+    });
+    setSelectedIds(new Set());
+  };
+
+  const bulkResolve = () => {
+    selectedIds.forEach(id => {
+      const a = alerts.find(x => x.id === id);
+      if (a && a.status !== 'resolved') resolve(id);
+    });
+    setSelectedIds(new Set());
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
@@ -102,13 +134,13 @@ const AlertsPage: React.FC = () => {
             fontWeight: 700,
             border: '1.5px solid #dc2626',
             borderRadius: 8,
-            background: '#fef2f2',
+            background: 'rgba(220, 38, 38, 0.08)',
             color: '#dc2626',
             cursor: 'pointer',
             transition: 'all 0.15s',
           }}
           onMouseOver={(e) => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.color = '#fff'; }}
-          onMouseOut={(e) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#dc2626'; }}
+          onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(220, 38, 38, 0.08)'; e.currentTarget.style.color = '#dc2626'; }}
         >
           + Report Alert
         </button>
@@ -207,6 +239,43 @@ const AlertsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Bulk actions bar */}
+      {alerts.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '10px 16px', borderRadius: 10,
+          border: '1px solid var(--color-border, #e2e8f0)',
+          background: 'var(--color-surface, #fff)',
+        }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>
+            <input type="checkbox" checked={selectedIds.size > 0 && selectedIds.size === alerts.filter(a => a.status !== 'resolved').length}
+              onChange={selectAll} style={{ accentColor: 'var(--color-primary, #1a56db)' }} />
+            Select All ({alerts.filter(a => a.status !== 'resolved').length})
+          </label>
+          {selectedIds.size > 0 && (
+            <>
+              <span style={{ fontSize: 12, color: 'var(--color-muted)' }}>
+                {selectedIds.size} selected
+              </span>
+              <button onClick={bulkAcknowledge} style={{
+                padding: '5px 14px', fontSize: 11, fontWeight: 600, borderRadius: 6,
+                border: '1px solid #6366f1', background: 'rgba(99,102,241,0.08)',
+                color: '#6366f1', cursor: 'pointer',
+              }}>
+                ✓ Bulk Acknowledge
+              </button>
+              <button onClick={bulkResolve} style={{
+                padding: '5px 14px', fontSize: 11, fontWeight: 600, borderRadius: 6,
+                border: '1px solid #22c55e', background: 'rgba(34,197,94,0.08)',
+                color: '#22c55e', cursor: 'pointer',
+              }}>
+                ✓ Bulk Resolve
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Alert list */}
       {isLoading ? (
