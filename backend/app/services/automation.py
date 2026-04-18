@@ -17,7 +17,7 @@ Every POLL_INTERVAL_SECONDS it:
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Sequence
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -426,7 +426,7 @@ async def _run_cycle() -> None:
 
 
 async def _check_cascading_failures(
-    db: AsyncSession, machines: list, now: datetime
+    db: AsyncSession, machines: Sequence[Machine], now: datetime
 ) -> None:
     """
     Detect when one machine's rapid risk increase could trigger failures in
