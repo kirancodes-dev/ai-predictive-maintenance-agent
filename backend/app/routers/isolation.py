@@ -26,75 +26,51 @@ from app.core.websocket_manager import ws_manager
 
 router = APIRouter(prefix="/isolation", tags=["isolation"])
 
-# ── Machine topology — 36-machine factory floor, 4 production lines ──────────
+# ── Machine topology — 4-machine production line ────────────────────────────
 #
-#  Layout: 4 lines × 9 machines each, arranged in a 6-column × 6-row grid
+#  CNC_01 (Zone A) → CNC_02 (Zone A) → PUMP_03 (Zone B) → CONVEYOR_04 (Zone C)
 #
-#  Line 1  (row 0-1): M01 → M02 → M03 → M04 → M05 → M06 → M07 → M08 → M09
-#  Line 2  (row 2-3): M10 → M11 → M12 → M13 → M14 → M15 → M16 → M17 → M18
-#  Line 3  (row 4-5): M19 → M20 → M21 → M22 → M23 → M24 → M25 → M26 →
-#                     [M27 ⚠️ FAULT POINT] → M28 → M29 → M30 ← (BLOCKED)
-#  Line 4  (row 6-7): M31 → M32 → M33 → M34 → M35 → M36
-#
-#  When M27 is isolated, downstream machines M28-M30 are automatically protected.
-#
-#  The 4 core demo machines retain their IDs for backward compatibility:
-#    CNC_01, CNC_02, PUMP_03, CONVEYOR_04 are M01, M10, M19, M31 in the new map
-#    but also kept as aliases in the status API for existing frontend pages.
+#  If CNC_01 fails, CNC_02, PUMP_03, and CONVEYOR_04 are all at risk.
+#  If CNC_02 fails, PUMP_03 and CONVEYOR_04 are at risk.
+#  CONVEYOR_04 is the terminal output machine — no downstream dependencies.
 
-def _make_line(
-    line_num: int,
-    start_m: int,
-    count: int,
-    zone: str,
-    machine_type: str,
-    row_offset: int,
-) -> dict:
-    """Generate a sequential chain of machines for one production line."""
-    nodes = {}
-    for i in range(count):
-        m_num = start_m + i
-        m_id = f"M{m_num:02d}"
-        col = i % 6
-        row = row_offset + (i // 6)
-        upstream = [f"M{m_num - 1:02d}"] if i > 0 else []
-        downstream = [f"M{m_num + 1:02d}"] if i < count - 1 else []
-        nodes[m_id] = {
-            "name": f"{machine_type} {m_num:02d}",
-            "zone": zone,
-            "position": (row, col),
-            "downstream": downstream,
-            "upstream": upstream,
-            "line": f"Line-{line_num}",
-            "machineType": machine_type,
-        }
-    return nodes
-
-
-MACHINE_TOPOLOGY: dict = {}
-
-# Line 1 — CNC Mills (M01-M09) — Zone A
-MACHINE_TOPOLOGY.update(_make_line(1, 1, 9, "Zone A", "CNC Mill", 0))
-
-# Line 2 — Industrial Pumps (M10-M18) — Zone B
-MACHINE_TOPOLOGY.update(_make_line(2, 10, 9, "Zone B", "Pump", 2))
-
-# Line 3 — Conveyor + Assembly (M19-M30) — Zone C
-# Machines 1-9 of line 3 = M19-M27, machines 10-12 = M28-M30
-MACHINE_TOPOLOGY.update(_make_line(3, 19, 12, "Zone C", "Conveyor", 4))
-
-# Line 4 — Compressors (M31-M36) — Zone D
-MACHINE_TOPOLOGY.update(_make_line(4, 31, 6, "Zone D", "Compressor", 6))
-
-# ── Backward-compat aliases ─────────────────────────────────────────────────
-# The original 4-machine IDs are kept as aliases in the status view so that
-# existing alert/prediction pages continue to work.  They map to the first
-# machine on each line.
-_LEGACY_ALIAS = {
-    "CNC_01":      "M01",
-    "CNC_02":      "M10",
-    "PUMP_03":     "M19",
-    "CONVEYOR_04": "M31",
+MACHINE_TOPOLOGY: dict = {
+    "CNC_01": {
+        "name": "CNC Machine #1",
+        "zone": "Zone A",
+        "position": (0, 0),
+        "line": "Line-1",
+        "machineType": "CNC Mill",
+        "downstream": ["CNC_02"],
+        "upstream": [],
+    },
+    "CNC_02": {
+        "name": "CNC Machine #2",
+        "zone": "Zone A",
+        "position": (0, 1),
+        "line": "Line-1",
+        "machineType": "CNC Lathe",
+        "downstream": ["PUMP_03"],
+        "upstream": ["CNC_01"],
+    },
+    "PUMP_03": {
+        "name": "Pump Station #3",
+        "zone": "Zone B",
+        "position": (0, 2),
+        "line": "Line-1",
+        "machineType": "Industrial Pump",
+        "downstream": ["CONVEYOR_04"],
+        "upstream": ["CNC_02"],
+    },
+    "CONVEYOR_04": {
+        "name": "Conveyor Belt #4",
+        "zone": "Zone C",
+        "position": (0, 3),
+        "line": "Line-1",
+        "machineType": "Conveyor Belt",
+        "downstream": [],
+        "upstream": ["PUMP_03"],
+    },
 }
 
 # Risk threshold above which auto-isolation is triggered
