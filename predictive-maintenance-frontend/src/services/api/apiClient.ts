@@ -1,6 +1,11 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1';
+declare global { interface Window { __API_URL__?: string; __WS_URL__?: string; } }
+
+const BASE_URL =
+  (typeof window !== 'undefined' && window.__API_URL__) ||
+  import.meta.env.VITE_API_URL ||
+  'http://localhost:8000/api/v1';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,

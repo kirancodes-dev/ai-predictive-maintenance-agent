@@ -27,7 +27,7 @@ class WebSocketService {
     const token = localStorage.getItem('access_token');
     if (!token) return;
 
-    const base = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8000';
+    const base = (typeof window !== 'undefined' && window.__WS_URL__) || import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
     const url = `${base}${path}?token=${token}`;
 
     const ws = new WebSocket(url);
@@ -65,7 +65,7 @@ class WebSocketService {
   private _createConnection(path: string) {
     const token = localStorage.getItem('access_token');
     if (!token) return;
-    const base = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8000';
+    const base = (typeof window !== 'undefined' && window.__WS_URL__) || import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
     const url = `${base}${path}?token=${token}`;
     const ws = new WebSocket(url);
     const entry: ConnectionEntry = { ws, reconnectTimer: null, refCount: 1 };
