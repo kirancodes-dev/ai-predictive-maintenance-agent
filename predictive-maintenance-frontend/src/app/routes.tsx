@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardPage from '../pages/DashboardPage';
+import InsightsPage from '../pages/InsightsPage';
 import MachineDetailPage from '../pages/MachineDetailPage';
 import LiveMonitoringPage from '../pages/LiveMonitoringPage';
 import HistoryPage from '../pages/HistoryPage';
@@ -83,6 +84,14 @@ const AppRoutes: React.FC = () => (
       element={
         <ProtectedRoute>
           <SettingsPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/insights"
+      element={
+        <ProtectedRoute>
+          <InsightsPage />
         </ProtectedRoute>
       }
     />

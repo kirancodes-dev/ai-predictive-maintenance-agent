@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from app.config import settings
 from app.database import init_db, AsyncSessionLocal
 from app.utils.seed_data import seed_database
-from app.routers import auth, machines, alerts, maintenance, stream, websocket, predictions, technicians, ml, data
+from app.routers import auth, machines, alerts, maintenance, stream, websocket, predictions, technicians, ml, data, insights
 from app.services.automation import run_automation_loop
 from app.services.ml_service import ml_service
 
@@ -100,6 +100,7 @@ app.include_router(predictions.router, prefix="/api/v1")
 app.include_router(technicians.router, prefix="/api/v1")
 app.include_router(ml.router, prefix="/api/v1")
 app.include_router(data.router, prefix="/api/v1")
+app.include_router(insights.router, prefix="/api/v1")
 
 # ── WebSocket ────────────────────────────────────────────────────────────────
 app.include_router(websocket.router)

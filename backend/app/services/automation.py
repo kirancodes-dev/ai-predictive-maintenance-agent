@@ -33,6 +33,7 @@ from app.services.ml_service import ml_service
 from app.services.signal_quality import signal_quality
 from app.core.websocket_manager import ws_manager
 from app.services.notification_service import notify_pre_failure_alert, notify_technician_assigned
+from app.services.insights_service import report_alert_to_sim_server
 
 logger = logging.getLogger("automation")
 
@@ -382,6 +383,13 @@ async def _check_cascading_failures(
                 db.add(alert)
                 signal_quality.record_alert(neighbor.id, cascade_key)
 
+                # Report cascade risk back to simulation server
+                await report_alert_to_sim_server(
+                    neighbor.id,
+                    f"Cascading failure risk: {trigger.name} (risk {trigger.risk_score:.0f}/100) "
+                    f"is failing in zone '{location}' — may accelerate failure on {neighbor.name}.",
+                )
+
                 await ws_manager.broadcast_all({
                     "type": "cascade_warning",
                     "payload": {
@@ -553,6 +561,14 @@ async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) ->
 
             # Send email/Slack notification
             await notify_pre_failure_alert(msg_payload)
+
+            # Report confirmed alert back to simulation server
+            await report_alert_to_sim_server(
+                machine.id,
+                f"Pre-failure milestone ({milestone_hours}h): {pred.failure_type} — "
+                f"urgency={pred.urgency}, confidence={pred.confidence:.0%}, "
+                f"technician={pred.assigned_technician_name or 'unassigned'}",
+            )
 
             logger.info(
                 "PRE-FAILURE ALERT sent: %s — %.1fh remaining (milestone %dh)",
