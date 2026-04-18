@@ -7,6 +7,7 @@ const navItems = [
   { to: '/agent', label: 'AI Agent', icon: '🤖' },
   { to: '/insights', label: 'AI Insights', icon: '🧠' },
   { to: '/floor-map', label: 'Floor Map', icon: '🏭' },
+  { to: '/cascade', label: 'Cascade Safety', icon: '🛡️' },
   { to: '/live', label: 'Live Monitor', icon: '📡' },
   { to: '/history', label: 'History', icon: '📈' },
   { to: '/maintenance', label: 'Maintenance', icon: '🔧' },

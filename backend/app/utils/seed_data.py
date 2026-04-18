@@ -12,6 +12,72 @@ from app.models.technician import Technician
 from app.core.security import hash_password
 
 
+# ── 36-machine floor seed data ─────────────────────────────────────────────
+# 4 production lines × 9 machines each.
+# M27 is the "fault point" in Line 3 — seeded with critical risk so the
+# cascade-isolation system triggers on first boot.
+
+def _floor_machines() -> list:
+    """Generate M01-M36 with deterministic but varied risk scores."""
+    import math
+    machines = []
+
+    LINE_CONFIG = [
+        # (line_num, start, count, zone, type, model, manufacturer, tag)
+        (1,  1,  9, "Zone A", "CNC Mill",    "Fanuc 30iB",          "Fanuc",    "cnc"),
+        (2, 10,  9, "Zone B", "Pump",         "Grundfos CR",         "Grundfos", "pump"),
+        (3, 19, 12, "Zone C", "Conveyor",     "Dorner 2200",         "Dorner",   "conveyor"),
+        (4, 31,  6, "Zone D", "Compressor",   "Atlas Copco GA",      "Atlas Copco", "compressor"),
+    ]
+
+    for line_num, start, count, zone, mtype, model, mfr, tag in LINE_CONFIG:
+        for i in range(count):
+            n = start + i
+            m_id = f"M{n:02d}"
+
+            # M27 — the known fault machine in Line 3 at position 9
+            if n == 27:
+                risk, risk_level, status = 89.0, "critical", "critical"
+                desc = f"{mtype} {n:02d} — ⚠️ CRITICAL: cascade isolation trigger machine"
+                tags = [tag, "floor-room-1", "bearing-wear", "cascade-risk"]
+            else:
+                # Vary risk by position in line: middle machines degrade faster
+                pos_factor = math.sin(math.pi * i / max(count - 1, 1))
+                base = 5 + (n % 17) * 2
+                risk = round(min(80.0, base + pos_factor * 25), 1)
+                if risk >= 70:
+                    risk_level, status = "high", "warning"
+                elif risk >= 40:
+                    risk_level, status = "medium", "warning"
+                else:
+                    risk_level, status = "low", "online"
+                desc = f"{mtype} {n:02d} — {zone} production unit"
+                tags = [tag, "floor-room-1"]
+
+            year = 2018 + (n % 6)
+            machines.append({
+                "id": m_id,
+                "name": f"{mtype} {n:02d}",
+                "model": f"{model}-{n:02d}",
+                "location": f"Factory Floor Room 1 — {zone}",
+                "status": status,
+                "risk_score": risk,
+                "risk_level": risk_level,
+                "manufacturer": mfr,
+                "serial_number": f"FAC-{year}-{n:03d}",
+                "firmware_version": "2.1.0",
+                "tags": tags,
+                "description": desc,
+                "install_date": f"{year}-{(n % 12) + 1:02d}-15",
+                "next_maintenance_date": "2026-06-01",
+            })
+
+    return machines
+
+
+FLOOR_MACHINES = _floor_machines()
+
+# Legacy 4-machine data (still needed for the simulation-server stream endpoints)
 MACHINES_DATA = [
     {
         "id": "CNC_01",
@@ -201,6 +267,7 @@ async def seed_database(db: AsyncSession) -> None:
     # ── Machines & Sensors ──────────────────────────────────────────────────
     existing_machine = await db.execute(select(Machine).limit(1))
     if not existing_machine.scalar_one_or_none():
+        # Seed the 4 legacy sim-server machines
         for m_data in MACHINES_DATA:
             machine = Machine(
                 id=m_data["id"],
@@ -236,6 +303,49 @@ async def seed_database(db: AsyncSession) -> None:
                     critical_max=tmpl["critical_max"],
                 )
                 db.add(sensor)
+
+        # Seed the 36 floor machines (M01-M36)
+        _DEFAULT_SENSORS = [
+            {"name": "Temperature", "type": "temperature", "unit": "°C",
+             "min_threshold": 60.0, "max_threshold": 85.0, "critical_min": 45.0, "critical_max": 100.0},
+            {"name": "Vibration",   "type": "vibration",   "unit": "mm/s",
+             "min_threshold": 0.5,  "max_threshold": 3.5,  "critical_min": 0.1,  "critical_max": 5.5},
+            {"name": "RPM",         "type": "rpm",         "unit": "RPM",
+             "min_threshold": 900.0, "max_threshold": 1800.0, "critical_min": 700.0, "critical_max": 2200.0},
+            {"name": "Current",     "type": "current",     "unit": "A",
+             "min_threshold": 5.0,  "max_threshold": 22.0, "critical_min": 3.0,  "critical_max": 28.0},
+        ]
+        for m_data in FLOOR_MACHINES:
+            machine = Machine(
+                id=m_data["id"],
+                name=m_data["name"],
+                model=m_data["model"],
+                location=m_data["location"],
+                status=m_data["status"],
+                risk_score=m_data["risk_score"],
+                risk_level=m_data["risk_level"],
+                manufacturer=m_data["manufacturer"],
+                serial_number=m_data["serial_number"],
+                firmware_version=m_data["firmware_version"],
+                tags=m_data["tags"],
+                description=m_data["description"],
+                install_date=m_data["install_date"],
+                next_maintenance_date=m_data.get("next_maintenance_date"),
+                metadata_={},
+            )
+            db.add(machine)
+            await db.flush()
+            for tmpl in _DEFAULT_SENSORS:
+                db.add(Sensor(
+                    machine_id=m_data["id"],
+                    name=tmpl["name"],
+                    type=tmpl["type"],
+                    unit=tmpl["unit"],
+                    min_threshold=tmpl["min_threshold"],
+                    max_threshold=tmpl["max_threshold"],
+                    critical_min=tmpl["critical_min"],
+                    critical_max=tmpl["critical_max"],
+                ))
 
     await db.flush()
 

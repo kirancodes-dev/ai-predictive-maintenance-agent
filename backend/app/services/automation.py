@@ -28,6 +28,7 @@ from app.models.technician import Technician
 from app.models.prediction import FailurePrediction
 from app.models.maintenance import MaintenanceRecord
 from app.models.alert import Alert
+from app.models.isolation import MachineIsolation
 from app.services.prediction_engine import compute_prediction
 from app.services.ml_service import ml_service
 from app.services.signal_quality import signal_quality
@@ -35,6 +36,7 @@ from app.services.fingerprint_service import match_fingerprints
 from app.core.websocket_manager import ws_manager
 from app.services.notification_service import notify_pre_failure_alert, notify_technician_assigned
 from app.services.insights_service import report_alert_to_sim_server
+from app.routers.isolation import MACHINE_TOPOLOGY, AUTO_ISOLATE_RISK_THRESHOLD, get_all_downstream
 
 logger = logging.getLogger("automation")
 
@@ -416,6 +418,9 @@ async def _run_cycle() -> None:
             except Exception as exc:
                 logger.error("Error processing %s: %s", machine.id, exc, exc_info=True)
 
+        # ── Auto-isolation: cut off machines at critical risk to protect downstream ──
+        await _check_auto_isolation(db, machines, now)
+
         # ── Cascading failure detection ──
         await _check_cascading_failures(db, machines, now)
 
@@ -423,6 +428,105 @@ async def _run_cycle() -> None:
         await _check_unacknowledged_escalations(db, now)
 
         await db.commit()
+
+
+# ── Auto-isolation: cut off machines at critical risk ───────────────────────
+
+async def _check_auto_isolation(
+    db: AsyncSession, machines: Sequence[Machine], now: datetime
+) -> None:
+    """
+    Auto-isolate machines whose risk score exceeds AUTO_ISOLATE_RISK_THRESHOLD.
+    This cuts them off from downstream systems to prevent cascade failures.
+    Only isolates if not already isolated.
+    """
+    for machine in machines:
+        if machine.risk_score < AUTO_ISOLATE_RISK_THRESHOLD:
+            continue
+
+        # Skip if already isolated
+        existing = await db.execute(
+            select(MachineIsolation).where(
+                MachineIsolation.machine_id == machine.id,
+                MachineIsolation.is_isolated == True,
+            )
+        )
+        if existing.scalar_one_or_none():
+            continue
+
+        # Skip if machine not in topology
+        topo = MACHINE_TOPOLOGY.get(machine.id)
+        if not topo:
+            continue
+
+        downstream_ids = get_all_downstream(machine.id)
+        downstream_names = [
+            MACHINE_TOPOLOGY[d]["name"] for d in downstream_ids if d in MACHINE_TOPOLOGY
+        ]
+
+        # Create isolation record
+        iso = MachineIsolation(
+            machine_id=machine.id,
+            machine_name=machine.name,
+            is_isolated=True,
+            isolation_type="auto",
+            reason=(
+                f"Risk score {machine.risk_score:.0f}/100 exceeded auto-isolation "
+                f"threshold ({AUTO_ISOLATE_RISK_THRESHOLD:.0f}). "
+                f"Machine cut off to protect {len(downstream_ids)} downstream system(s)."
+            ),
+            risk_score_at_isolation=machine.risk_score,
+            protected_machine_ids=",".join(downstream_ids) if downstream_ids else None,
+            protected_machine_names=",".join(downstream_names) if downstream_names else None,
+            triggered_by="Automation — cascade prevention",
+        )
+        db.add(iso)
+
+        # Update machine status
+        machine.status = "isolated"
+
+        # Create high-severity alert
+        alert = Alert(
+            machine_id=machine.id,
+            machine_name=machine.name,
+            severity="critical",
+            status="active",
+            title=f"🔒 AUTO-ISOLATED: {machine.name} — cascade prevention",
+            message=(
+                f"Machine automatically isolated due to critical risk ({machine.risk_score:.0f}/100). "
+                f"Downstream machines protected: {', '.join(downstream_names) if downstream_names else 'none'}. "
+                f"Maintenance intervention required before release."
+            ),
+        )
+        db.add(alert)
+
+        # Broadcast to all WebSocket clients
+        await ws_manager.broadcast_all({
+            "type": "machine_isolated",
+            "payload": {
+                "machineId": machine.id,
+                "machineName": machine.name,
+                "isolationType": "auto",
+                "reason": iso.reason,
+                "triggeredBy": "Automation — cascade prevention",
+                "protectedMachines": downstream_ids,
+                "protectedMachineNames": downstream_names,
+                "riskScore": machine.risk_score,
+                "timestamp": now.isoformat(),
+            },
+        })
+
+        # Report to simulation server
+        await report_alert_to_sim_server(
+            machine.id,
+            f"AUTO-ISOLATED (risk {machine.risk_score:.0f}/100): "
+            f"cut off to protect {', '.join(downstream_names) if downstream_names else 'no'} downstream machines",
+        )
+
+        logger.warning(
+            "AUTO-ISOLATED %s (risk %.0f) — protecting downstream: %s",
+            machine.id, machine.risk_score, downstream_names,
+        )
 
 
 async def _check_cascading_failures(

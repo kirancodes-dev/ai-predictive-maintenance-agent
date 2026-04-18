@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { streamApi } from '../../services/api/streamApi';
 import { useMachineData } from '../../hooks/useMachineData';
+import { isolationApi } from '../../services/api/isolationApi';
 import './FloorMapPage.css';
 
 const MACHINE_IDS = ['CNC_01', 'CNC_02', 'PUMP_03', 'CONVEYOR_04'];
@@ -30,6 +31,14 @@ function riskGlow(risk?: string, status?: string): string {
 const FloorMapPage: React.FC = () => {
   const { data: machinesData } = useMachineData();
   const machines = machinesData?.items ?? [];
+
+  /* Fetch isolation status */
+  const { data: isoData } = useQuery(
+    'isolationStatus',
+    () => isolationApi.getStatus().then((r) => r.data?.data || {}),
+    { refetchInterval: 5_000, staleTime: 4_000, retry: 0 },
+  );
+  const isolationStatuses = isoData || {};
 
   /* Poll live sensor data per machine */
   const liveQueries = MACHINE_IDS.map((id) =>
@@ -75,8 +84,10 @@ const FloorMapPage: React.FC = () => {
         {MACHINE_IDS.map((id, idx) => {
           const layout = LAYOUT[id];
           const m = machines.find((mc) => mc.id === id);
-          const color = riskColor(m?.riskLevel, m?.status);
-          const isPulsing = color !== '#22c55e';
+          const iso = isolationStatuses[id];
+          const isIsolated = iso?.isIsolated || false;
+          const color = isIsolated ? '#ef4444' : riskColor(m?.riskLevel, m?.status);
+          const isPulsing = !isIsolated && color !== '#22c55e';
           const temp = getSensor(idx, 'temperature');
           const vib = getSensor(idx, 'vibration');
 
@@ -84,7 +95,7 @@ const FloorMapPage: React.FC = () => {
             <Link
               key={id}
               to={`/machines/${id}`}
-              className={`floor-map__machine${isPulsing ? ' floor-map__machine--pulse' : ''}`}
+              className={`floor-map__machine${isPulsing ? ' floor-map__machine--pulse' : ''}${isIsolated ? ' floor-map__machine--isolated' : ''}`}
               style={{
                 left: `${layout.x}%`,
                 top: `${layout.y}%`,
@@ -92,14 +103,20 @@ const FloorMapPage: React.FC = () => {
                 height: `${layout.h}%`,
                 '--machine-color': color,
                 borderColor: color,
-                boxShadow: riskGlow(m?.riskLevel, m?.status),
+                boxShadow: isIsolated ? '0 0 20px rgba(239,68,68,0.3)' : riskGlow(m?.riskLevel, m?.status),
               } as React.CSSProperties}
             >
+              {isIsolated && (
+                <div className="floor-map__isolation-overlay">
+                  <span className="floor-map__isolation-icon">🔒</span>
+                  <span className="floor-map__isolation-label">ISOLATED</span>
+                </div>
+              )}
               <div className="floor-map__machine-header">
                 <span className="floor-map__machine-icon">{layout.icon}</span>
                 <span className="floor-map__machine-name">{layout.label}</span>
-                <span className="floor-map__machine-status" style={{ background: color }}>
-                  {m?.status ?? 'unknown'}
+                <span className="floor-map__machine-status" style={{ background: isIsolated ? '#ef4444' : color }}>
+                  {isIsolated ? '🔒 isolated' : (m?.status ?? 'unknown')}
                 </span>
               </div>
               <div className="floor-map__machine-sensors">
@@ -142,9 +159,16 @@ const FloorMapPage: React.FC = () => {
           { color: '#f59e0b', label: 'Medium Risk' },
           { color: '#f97316', label: 'High Risk' },
           { color: '#ef4444', label: 'Critical' },
-        ].map(({ color, label }) => (
+          { color: '#ef4444', label: '🔒 Isolated', dashed: true },
+        ].map(({ color, label, dashed }) => (
           <div key={label} className="floor-map__legend-item">
-            <span className="floor-map__legend-dot" style={{ background: color }} />
+            <span
+              className="floor-map__legend-dot"
+              style={{
+                background: dashed ? 'transparent' : color,
+                border: dashed ? `2px dashed ${color}` : 'none',
+              }}
+            />
             <span>{label}</span>
           </div>
         ))}

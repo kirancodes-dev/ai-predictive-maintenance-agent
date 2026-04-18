@@ -25,6 +25,7 @@ const LiveMonitoringPage  = lazy(() => import('../pages/LiveMonitoringPage'));
 const HistoryPage         = lazy(() => import('../pages/HistoryPage'));
 const InsightsPage        = lazy(() => import('../pages/InsightsPage'));
 const FloorMapPage        = lazy(() => import('../pages/FloorMapPage'));
+const CascadeIsolationPage = lazy(() => import('../pages/CascadeIsolationPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 15_000, retry: 1 } },
@@ -102,6 +103,7 @@ const ProtectedLayout: React.FC = () => {
                   <Route path="/reports"     element={<ReportsPage />} />
                   <Route path="/insights"    element={<InsightsPage />} />
                   <Route path="/floor-map"   element={<FloorMapPage />} />
+                  <Route path="/cascade"     element={<CascadeIsolationPage />} />
                   <Route path="/settings"    element={<SettingsPage />} />
                   <Route path="*"            element={<NotFoundPage />} />
                 </Routes>
