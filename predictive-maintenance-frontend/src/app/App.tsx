@@ -22,6 +22,7 @@ const NotFoundPage        = lazy(() => import('../pages/NotFoundPage'));
 const AgentDashboardPage  = lazy(() => import('../pages/AgentDashboardPage'));
 const LiveMonitoringPage  = lazy(() => import('../pages/LiveMonitoringPage'));
 const HistoryPage         = lazy(() => import('../pages/HistoryPage'));
+const InsightsPage        = lazy(() => import('../pages/InsightsPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 15_000, retry: 1 } },
@@ -80,6 +81,7 @@ const ProtectedLayout: React.FC = () => {
                   <Route path="/alerts"      element={<AlertsPage />} />
                   <Route path="/maintenance" element={<MaintenancePage />} />
                   <Route path="/reports"     element={<ReportsPage />} />
+                  <Route path="/insights"    element={<InsightsPage />} />
                   <Route path="/settings"    element={<SettingsPage />} />
                   <Route path="*"            element={<NotFoundPage />} />
                 </Routes>
