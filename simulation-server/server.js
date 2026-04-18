@@ -120,13 +120,105 @@ function generateReading(machineId, minuteOffset) {
   return reading;
 }
 
+// ── Stateful live state — updated every second so the SSE stream fluctuates ──
+const BASELINES = {
+  CNC_01:      { temp: 72,  vib: 1.8, rpm: 1480, current: 12.5 },
+  CNC_02:      { temp: 68,  vib: 1.5, rpm: 1490, current: 11.8 },
+  PUMP_03:     { temp: 55,  vib: 2.2, rpm: 2950, current: 18.0 },
+  CONVEYOR_04: { temp: 45,  vib: 0.9, rpm:  720, current:  8.5 },
+};
+
+function rnd(min, max) { return Math.random() * (max - min) + min; }
+
+const liveState = {};
+for (const id of Object.keys(MACHINES)) {
+  const b = BASELINES[id];
+  liveState[id] = { temp: b.temp, vib: b.vib, rpm: b.rpm, current: b.current, tick: 0 };
+}
+
+function nextLiveReading(machineId) {
+  const s = liveState[machineId];
+  const b = BASELINES[machineId];
+  if (!s) return null;
+  s.tick++;
+
+  let status = 'running';
+  let { temp, vib, rpm, current } = s;
+
+  // Slow mean-reversion + per-second noise (makes chart wiggle every second)
+  temp    += (b.temp    - temp)    * 0.03 + rnd(-0.8,  0.8);
+  vib     += (b.vib     - vib)     * 0.03 + rnd(-0.12, 0.12);
+  rpm     += (b.rpm     - rpm)     * 0.03 + rnd(-15,   15);
+  current += (b.current - current) * 0.03 + rnd(-0.3,  0.3);
+
+  // ── Machine-specific anomaly patterns ──────────────────────────────────────
+
+  if (machineId === 'CNC_01') {
+    // Slow bearing-wear ramp: vibration + temp rise over time
+    const ramp = Math.min(s.tick / (5 * 60), 1);
+    vib     += ramp * 0.006 + (Math.random() < 0.05 ? rnd(0.3, 1.2) : 0);
+    temp    += ramp * 0.012 + (Math.random() < 0.05 ? rnd(0.5, 2.0) : 0);
+    current += ramp * 0.006;
+    if (vib > 3.5) status = 'warning';
+    if (vib > 5.5) status = 'fault';
+  }
+
+  if (machineId === 'CNC_02') {
+    // Thermal spike every 3 minutes (180 ticks), lasts 20 ticks
+    if (s.tick % 180 < 20) {
+      temp    += rnd(6, 22);
+      current += rnd(1, 5);
+    }
+    // Extra random micro-spikes for visual interest
+    if (Math.random() < 0.03) { temp += rnd(3, 10); }
+    if (temp >  95) status = 'warning';
+    if (temp > 110) status = 'fault';
+  }
+
+  if (machineId === 'PUMP_03') {
+    // Cavitation bursts: ~4% chance each tick — big short spikes
+    if (Math.random() < 0.04) {
+      vib     += rnd(1.5, 6.0);
+      current += rnd(0.5, 2.5);
+    }
+    // Slow RPM decline (clog developing)
+    rpm -= 0.03;
+    if (vib > 5 || rpm < 2800) status = 'warning';
+  }
+
+  if (machineId === 'CONVEYOR_04') {
+    // Mostly healthy — occasional small bumps
+    if (Math.random() < 0.008) {
+      vib += rnd(0.4, 1.5);
+      status = 'warning';
+    }
+  }
+
+  // Clamp to physical limits
+  temp    = Math.max(20,  Math.min(130, temp));
+  vib     = Math.max(0.1, Math.min(12,  vib));
+  rpm     = Math.max(100, Math.min(4000, rpm));
+  current = Math.max(1,   Math.min(30,  current));
+
+  s.temp    = temp;
+  s.vib     = vib;
+  s.rpm     = rpm;
+  s.current = current;
+
+  return {
+    temperature_C:  Math.round(temp    * 100) / 100,
+    vibration_mm_s: Math.round(vib     * 100) / 100,
+    rpm:            Math.round(rpm),
+    current_A:      Math.round(current * 100) / 100,
+    timestamp:      new Date().toISOString(),
+    status,
+  };
+}
+
 function getLiveReading(machineId) {
-  // Use minute-based offset — same formula as history so there's no discontinuity
-  // when live data is plotted alongside historical data.
-  const offset = currentMinuteOffset();
-  const reading = generateReading(machineId, offset);
+  const reading = nextLiveReading(machineId);
   if (!reading) return null;
-  return { ...reading, timestamp: new Date().toISOString(), status: 'running' };
+  return reading;
 }
 
 // ── History generation ───────────────────────────────────────────────────────
