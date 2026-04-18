@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     SIMULATION_SERVER_URL: str = "http://localhost:3000"
     REDIS_URL: str = "redis://localhost:6379/0"
-    CORS_ORIGINS: str = '["http://localhost:3000","http://localhost:5173"]'
+    CORS_ORIGINS: str = '["*"]'
     ENVIRONMENT: str = "development"
 
     # Email notifications (SMTP)
