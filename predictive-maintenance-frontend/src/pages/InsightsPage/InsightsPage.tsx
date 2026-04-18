@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { insightsApi } from '../../services/api/insightsApi';
+import { Skeleton, MachineCardSkeleton, AnalysisPanelSkeleton } from '../../components/common/Skeleton';
 
 const MACHINES = [
   { id: 'CNC_01',      label: 'CNC Mill 01',        icon: '⚙' },
@@ -162,7 +163,10 @@ const InsightsPage: React.FC = () => {
                   <PhaseBar phase={p.phase} pct={p.pct_to_fault} />
                 </>
               ) : overviewLoading ? (
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>Loading…</div>
+                <>
+                  <Skeleton width="100%" height={8} borderRadius={4} style={{ marginTop: 8 }} />
+                  <Skeleton width="70%" height={10} style={{ marginTop: 6 }} />
+                </>
               ) : (
                 <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>No data</div>
               )}
@@ -171,11 +175,7 @@ const InsightsPage: React.FC = () => {
         })}
       </div>
 
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#94a3b8', fontSize: 14 }}>
-          ⟳ Running AI analysis for {MACHINES.find(m => m.id === selected)?.label}…
-        </div>
-      )}
+      {loading && <AnalysisPanelSkeleton />}
 
       {!loading && analysis && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>

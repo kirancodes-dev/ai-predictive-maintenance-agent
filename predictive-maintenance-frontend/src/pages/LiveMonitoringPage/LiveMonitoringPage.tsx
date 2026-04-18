@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMachineData } from '../../hooks/useMachineData';
 import LiveStream from '../../components/monitoring/LiveStream';
+import { Skeleton } from '../../components/common/Skeleton';
 import { STATUS_COLORS } from '../../utils/constants';
 
 const LiveMonitoringPage: React.FC = () => {
@@ -12,9 +13,21 @@ const LiveMonitoringPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    height: 200, color: 'var(--color-text-muted)', fontSize: 14 }}>
-        Loading machines…
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <Skeleton width={160} height={20} />
+          <Skeleton width={300} height={12} />
+        </div>
+        {/* Tab skeletons */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[0, 1, 2, 3].map(i => <Skeleton key={i} width={130} height={36} borderRadius={8} />)}
+        </div>
+        {/* Chart area skeleton */}
+        <Skeleton width="100%" height={320} borderRadius={14} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <Skeleton width="100%" height={200} borderRadius={14} />
+          <Skeleton width="100%" height={200} borderRadius={14} />
+        </div>
       </div>
     );
   }

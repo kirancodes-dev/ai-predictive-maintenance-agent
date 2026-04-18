@@ -1,0 +1,27 @@
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    #f0f2f5 25%,
+    #e4e8ee 50%,
+    #f0f2f5 75%
+  );
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Dark-mode aware */
+[data-theme='dark'] .skeleton {
+  background: linear-gradient(
+    90deg,
+    #1e2028 25%,
+    #262830 50%,
+    #1e2028 75%
+  );
+  background-size: 800px 100%;
+}

@@ -1,6 +1,7 @@
 import React from 'react';
 import MachineCard from './MachineCard';
 import type { Machine } from '../../../types/machine.types';
+import { DashboardCardSkeleton } from '../../common/Skeleton';
 import './MachineGrid.css';
 
 interface MachineGridProps {
@@ -10,7 +11,11 @@ interface MachineGridProps {
 
 const MachineGrid: React.FC<MachineGridProps> = ({ machines, isLoading }) => {
   if (isLoading) {
-    return <div className="machine-grid machine-grid--loading">Loading machines...</div>;
+    return (
+      <div className="machine-grid">
+        {[0, 1, 2, 3].map(i => <DashboardCardSkeleton key={i} />)}
+      </div>
+    );
   }
 
   if (machines.length === 0) {

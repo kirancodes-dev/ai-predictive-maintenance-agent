@@ -9,6 +9,7 @@ import Sidebar from '../components/common/Sidebar';
 import PageTransition from '../components/common/PageTransition';
 import CommandPalette from '../components/common/CommandPalette';
 import KeyboardShortcuts from '../components/common/KeyboardShortcuts';
+import { Skeleton } from '../components/common/Skeleton';
 
 const DashboardPage       = lazy(() => import('../pages/DashboardPage'));
 const AlertsPage          = lazy(() => import('../pages/AlertsPage'));
@@ -67,7 +68,24 @@ const ProtectedLayout: React.FC = () => {
           transition: 'background 0.2s, color 0.2s',
         }}>
           <Suspense fallback={
-            <div style={{ padding: '2rem', color: 'var(--color-muted)', fontSize: 14 }}>Loading…</div>
+            <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <Skeleton width={200} height={22} />
+              <Skeleton width={360} height={13} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16, marginTop: 8 }}>
+                {[0,1,2,3].map(i => (
+                  <div key={i} style={{ borderRadius: 14, border: '1.5px solid #e2e8f0', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Skeleton width={110} height={14} /><Skeleton width={60} height={22} borderRadius={20} />
+                    </div>
+                    <Skeleton width={160} height={11} />
+                    <Skeleton width="100%" height={8} borderRadius={4} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      {[0,1,2,3].map(j => <div key={j} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}><Skeleton width="60%" height={9} /><Skeleton width="80%" height={16} /></div>)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           }>
             <AnimatePresence mode="wait">
               <PageTransition key={location.pathname}>
