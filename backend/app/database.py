@@ -21,6 +21,7 @@ async def init_db():
     import app.models.maintenance  # noqa
     import app.models.technician  # noqa
     import app.models.prediction  # noqa
+    import app.models.failure_fingerprint  # noqa
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

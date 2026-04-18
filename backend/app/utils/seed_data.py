@@ -321,3 +321,154 @@ async def seed_database(db: AsyncSession) -> None:
 
     await db.commit()
     print("✅ Database seeded successfully (machines, sensors, technicians, alerts, maintenance)")
+
+    # ── Failure Fingerprints (known failure patterns) ───────────────────────
+    await _seed_failure_fingerprints(db)
+
+
+async def _seed_failure_fingerprints(db: AsyncSession) -> None:
+    """Seed known failure fingerprints — sensor snapshots from past failures.
+
+    Each entry is a reading at a specific hours-before-failure offset.
+    Together they form trajectories that the fingerprint matcher compares
+    against live readings.
+    """
+    from app.models.failure_fingerprint import FailureFingerprint
+
+    existing = await db.execute(select(FailureFingerprint).limit(1))
+    if existing.scalar_one_or_none():
+        return  # already seeded
+
+    fingerprints = [
+        # ── CNC Bearing-Wear Failure (trajectory: 48h → 24h → 6h → 0h) ──
+        {
+            "machine_type": "cnc", "label": "CNC bearing-wear failure #1",
+            "failure_type": "bearing-wear", "source": "seed",
+            "temperature": 78.0, "vibration": 2.8, "current": 13.5, "rpm": 1520.0,
+            "hours_before_failure": 48.0,
+        },
+        {
+            "machine_type": "cnc", "label": "CNC bearing-wear failure #1",
+            "failure_type": "bearing-wear", "source": "seed",
+            "temperature": 82.0, "vibration": 3.6, "current": 14.8, "rpm": 1480.0,
+            "hours_before_failure": 24.0,
+        },
+        {
+            "machine_type": "cnc", "label": "CNC bearing-wear failure #1",
+            "failure_type": "bearing-wear", "source": "seed",
+            "temperature": 88.0, "vibration": 4.5, "current": 16.2, "rpm": 1420.0,
+            "hours_before_failure": 6.0,
+        },
+        {
+            "machine_type": "cnc", "label": "CNC bearing-wear failure #1",
+            "failure_type": "bearing-wear", "source": "seed",
+            "temperature": 93.0, "vibration": 5.2, "current": 17.8, "rpm": 1350.0,
+            "hours_before_failure": 0.0,
+        },
+
+        # ── CNC Thermal-Runaway Failure (trajectory: 24h → 12h → 1h → 0h) ──
+        {
+            "machine_type": "cnc", "label": "CNC thermal-runaway failure #1",
+            "failure_type": "thermal-runaway", "source": "seed",
+            "temperature": 86.0, "vibration": 2.2, "current": 18.0, "rpm": 1650.0,
+            "hours_before_failure": 24.0,
+        },
+        {
+            "machine_type": "cnc", "label": "CNC thermal-runaway failure #1",
+            "failure_type": "thermal-runaway", "source": "seed",
+            "temperature": 94.0, "vibration": 2.8, "current": 21.0, "rpm": 1580.0,
+            "hours_before_failure": 12.0,
+        },
+        {
+            "machine_type": "cnc", "label": "CNC thermal-runaway failure #1",
+            "failure_type": "thermal-runaway", "source": "seed",
+            "temperature": 105.0, "vibration": 3.5, "current": 24.0, "rpm": 1500.0,
+            "hours_before_failure": 1.0,
+        },
+        {
+            "machine_type": "cnc", "label": "CNC thermal-runaway failure #1",
+            "failure_type": "thermal-runaway", "source": "seed",
+            "temperature": 112.0, "vibration": 4.0, "current": 26.5, "rpm": 1420.0,
+            "hours_before_failure": 0.0,
+        },
+
+        # ── Pump Cavitation Failure (trajectory: 72h → 24h → 6h → 0h) ──
+        {
+            "machine_type": "pump", "label": "Pump cavitation failure #1",
+            "failure_type": "cavitation", "source": "seed",
+            "temperature": 72.0, "vibration": 2.0, "current": 15.0, "rpm": 1100.0,
+            "hours_before_failure": 72.0,
+        },
+        {
+            "machine_type": "pump", "label": "Pump cavitation failure #1",
+            "failure_type": "cavitation", "source": "seed",
+            "temperature": 78.0, "vibration": 3.2, "current": 17.5, "rpm": 980.0,
+            "hours_before_failure": 24.0,
+        },
+        {
+            "machine_type": "pump", "label": "Pump cavitation failure #1",
+            "failure_type": "cavitation", "source": "seed",
+            "temperature": 84.0, "vibration": 4.2, "current": 20.0, "rpm": 850.0,
+            "hours_before_failure": 6.0,
+        },
+        {
+            "machine_type": "pump", "label": "Pump cavitation failure #1",
+            "failure_type": "cavitation", "source": "seed",
+            "temperature": 90.0, "vibration": 5.0, "current": 22.5, "rpm": 720.0,
+            "hours_before_failure": 0.0,
+        },
+
+        # ── Conveyor Belt-Slip Failure (trajectory: 48h → 12h → 1h → 0h) ──
+        {
+            "machine_type": "conveyor", "label": "Conveyor belt-slip failure #1",
+            "failure_type": "belt-slip", "source": "seed",
+            "temperature": 68.0, "vibration": 1.5, "current": 10.0, "rpm": 1050.0,
+            "hours_before_failure": 48.0,
+        },
+        {
+            "machine_type": "conveyor", "label": "Conveyor belt-slip failure #1",
+            "failure_type": "belt-slip", "source": "seed",
+            "temperature": 74.0, "vibration": 2.5, "current": 12.5, "rpm": 920.0,
+            "hours_before_failure": 12.0,
+        },
+        {
+            "machine_type": "conveyor", "label": "Conveyor belt-slip failure #1",
+            "failure_type": "belt-slip", "source": "seed",
+            "temperature": 80.0, "vibration": 3.2, "current": 14.0, "rpm": 800.0,
+            "hours_before_failure": 1.0,
+        },
+        {
+            "machine_type": "conveyor", "label": "Conveyor belt-slip failure #1",
+            "failure_type": "belt-slip", "source": "seed",
+            "temperature": 85.0, "vibration": 3.8, "current": 15.5, "rpm": 680.0,
+            "hours_before_failure": 0.0,
+        },
+
+        # ── Second CNC bearing-wear event (different machine, different readings) ──
+        {
+            "machine_type": "cnc", "label": "CNC bearing-wear failure #2",
+            "failure_type": "bearing-wear", "source": "seed",
+            "temperature": 80.0, "vibration": 3.0, "current": 14.0, "rpm": 1500.0,
+            "hours_before_failure": 24.0,
+        },
+        {
+            "machine_type": "cnc", "label": "CNC bearing-wear failure #2",
+            "failure_type": "bearing-wear", "source": "seed",
+            "temperature": 90.0, "vibration": 4.8, "current": 17.0, "rpm": 1380.0,
+            "hours_before_failure": 6.0,
+        },
+        {
+            "machine_type": "cnc", "label": "CNC bearing-wear failure #2",
+            "failure_type": "bearing-wear", "source": "seed",
+            "temperature": 96.0, "vibration": 5.5, "current": 18.5, "rpm": 1300.0,
+            "hours_before_failure": 0.0,
+        },
+    ]
+
+    for fp_data in fingerprints:
+        fp = FailureFingerprint(**fp_data)
+        db.add(fp)
+
+    await db.commit()
+    print(f"✅ Seeded {len(fingerprints)} failure fingerprints (cnc, pump, conveyor)")
+

@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from app.config import settings
 from app.database import init_db, AsyncSessionLocal
 from app.utils.seed_data import seed_database
-from app.routers import auth, machines, alerts, maintenance, stream, websocket, predictions, technicians, ml, data, insights
+from app.routers import auth, machines, alerts, maintenance, stream, websocket, predictions, technicians, ml, data, insights, fingerprints
 from app.services.automation import run_automation_loop
 from app.services.ml_service import ml_service
 
@@ -73,6 +73,7 @@ app = FastAPI(
         {"name": "ml", "description": "ML model — train, predict, check model status"},
         {"name": "data", "description": "Data ingestion — upload CSV/Parquet training data"},
         {"name": "stream", "description": "Sensor data — current readings and historical data from simulator"},
+        {"name": "fingerprints", "description": "Failure fingerprints — known failure patterns for comparison"},
         {"name": "websocket", "description": "Real-time WebSocket — live sensor streaming and alerts"},
     ],
     lifespan=lifespan,
@@ -101,6 +102,7 @@ app.include_router(technicians.router, prefix="/api/v1")
 app.include_router(ml.router, prefix="/api/v1")
 app.include_router(data.router, prefix="/api/v1")
 app.include_router(insights.router, prefix="/api/v1")
+app.include_router(fingerprints.router, prefix="/api/v1")
 
 # ── WebSocket ────────────────────────────────────────────────────────────────
 app.include_router(websocket.router)

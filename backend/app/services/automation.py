@@ -31,6 +31,7 @@ from app.models.alert import Alert
 from app.services.prediction_engine import compute_prediction
 from app.services.ml_service import ml_service
 from app.services.signal_quality import signal_quality
+from app.services.fingerprint_service import match_fingerprints
 from app.core.websocket_manager import ws_manager
 from app.services.notification_service import notify_pre_failure_alert, notify_technician_assigned
 from app.services.insights_service import report_alert_to_sim_server
@@ -625,6 +626,34 @@ async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) ->
                             machine.id, milestone_hours, ml_result.get("algorithm_scores"),
                         )
                         continue
+
+                    # ── Failure fingerprint comparison (second-layer verification) ──
+                    # Compare current readings against known failure patterns
+                    fp_result = await match_fingerprints(
+                        db=db,
+                        machine_tags=machine.tags or [],
+                        current_readings=vals,
+                        hours_remaining=hours_remaining,
+                    )
+                    if fp_result.get("matched"):
+                        logger.warning(
+                            "FINGERPRINT CONFIRMED for %s: readings mirror '%s' "
+                            "(distance=%.3f, failure_type=%s) — alert STRENGTHENED",
+                            machine.id,
+                            fp_result.get("best_match_label"),
+                            fp_result.get("best_match_distance"),
+                            fp_result.get("best_match_failure_type"),
+                        )
+                        # Boost confidence when fingerprint matches
+                        pred.confidence = min(1.0, pred.confidence * 1.15)
+                    elif fp_result.get("matches"):
+                        logger.info(
+                            "FINGERPRINT APPROACHING for %s: %d patterns within warn range "
+                            "(best_distance=%.3f)",
+                            machine.id,
+                            len(fp_result["matches"]),
+                            fp_result.get("best_match_distance"),
+                        )
 
             # Alert fatigue: skip if we already alerted this severity recently
             severity_bucket = "critical" if hours_remaining <= 24 else "high"
