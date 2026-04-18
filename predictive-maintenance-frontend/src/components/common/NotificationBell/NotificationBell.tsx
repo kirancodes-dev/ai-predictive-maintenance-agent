@@ -72,7 +72,7 @@ const NotificationBell: React.FC = () => {
                   <div className="notif-bell__content">
                     <div className="notif-bell__msg">{a.message}</div>
                     <div className="notif-bell__meta">
-                      {a.machineName || a.machineId} · {timeAgo(a.createdAt)}
+                      {a.machineName || a.machineId} · {timeAgo(a.timestamp)}
                     </div>
                   </div>
                 </button>
