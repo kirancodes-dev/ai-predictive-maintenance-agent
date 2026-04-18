@@ -9,6 +9,7 @@ import MaintenancePage from '../pages/MaintenancePage';
 import AlertsPage from '../pages/AlertsPage';
 import ReportsPage from '../pages/ReportsPage';
 import SettingsPage from '../pages/SettingsPage';
+import AgentDashboardPage from '../pages/AgentDashboardPage';
 import LoginPage from '../pages/LoginPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import { useAuth } from '../hooks/useAuth';
@@ -92,6 +93,14 @@ const AppRoutes: React.FC = () => (
       element={
         <ProtectedRoute>
           <InsightsPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/agent"
+      element={
+        <ProtectedRoute>
+          <AgentDashboardPage />
         </ProtectedRoute>
       }
     />
