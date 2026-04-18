@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta
 import random
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete, not_
 from app.models.user import User
 from app.models.machine import Machine
 from app.models.alert import Alert
@@ -178,6 +178,18 @@ TECHNICIANS_DATA = [
 
 
 async def seed_database(db: AsyncSession) -> None:
+    # ── Purge any machines not in the allowed 4-machine set ────────────────
+    # This removes leftover M01-M36 floor machines from older deployments.
+    ALLOWED_IDS = {"CNC_01", "CNC_02", "PUMP_03", "CONVEYOR_04"}
+    all_machines = await db.execute(select(Machine.id))
+    extra_ids = [row[0] for row in all_machines if row[0] not in ALLOWED_IDS]
+    if extra_ids:
+        # Delete sensors first (FK constraint), then machines
+        await db.execute(delete(Sensor).where(not_(Sensor.machine_id.in_(list(ALLOWED_IDS)))))
+        await db.execute(delete(Machine).where(not_(Machine.id.in_(list(ALLOWED_IDS)))))
+        await db.flush()
+        print(f"🧹 Removed {len(extra_ids)} extra machines: {extra_ids}")
+
     # ── Users ──────────────────────────────────────────────────────────────
     existing_user = await db.execute(select(User).limit(1))
     if not existing_user.scalar_one_or_none():
