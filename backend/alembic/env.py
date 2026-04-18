@@ -24,6 +24,11 @@ import app.models.maintenance
 #import app.models.prediction
 
 from app.database import Base
+from app.config import settings
+
+# Override the alembic.ini sqlalchemy.url with the settings value so
+# Railway's DATABASE_URL env var (PostgreSQL) is respected at migration time.
+config.set_main_option("sqlalchemy.url", settings.async_database_url)
 
 target_metadata = Base.metadata
 

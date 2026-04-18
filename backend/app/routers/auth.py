@@ -13,6 +13,10 @@ from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# --- NEW REGISTER MODEL ---
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
 
 class LoginRequest(BaseModel):
     email: str
@@ -37,6 +41,27 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: dict
+
+# --- NEW REGISTER ENDPOINT ---
+@router.post("/register")
+async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    # 1. Check if user already exists
+    existing = await db.execute(select(User).where(User.email == body.email))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="User already exists")
+        
+    # 2. Create the new Admin user
+    new_user = User(
+        email=body.email,
+        hashed_password=hash_password(body.password),
+        name="System Admin",
+        role="admin",
+        is_active=True
+    )
+    db.add(new_user)
+    await db.commit()
+    
+    return {"data": {"message": "Admin user created successfully!"}}
 
 
 @router.post("/login")

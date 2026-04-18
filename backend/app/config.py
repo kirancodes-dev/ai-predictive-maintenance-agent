@@ -1,6 +1,24 @@
 from pydantic_settings import BaseSettings
 from typing import List
 import json
+import re
+
+
+def _async_db_url(url: str) -> str:
+    """Convert any sync DB URL to its async driver equivalent.
+
+    Railway provides  ``postgresql://...`` or ``postgres://...``.
+    SQLAlchemy async needs  ``postgresql+asyncpg://...``.
+    SQLite URLs are returned unchanged (already ``sqlite+aiosqlite://``).
+    """
+    # Normalise legacy "postgres://" scheme Heroku/Railway sometimes emit
+    url = re.sub(r"^postgres://", "postgresql://", url)
+    # Add asyncpg driver if missing
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql+") and "+asyncpg" not in url:
+        url = re.sub(r"^postgresql\+\w+://", "postgresql+asyncpg://", url)
+    return url
 
 
 class Settings(BaseSettings):
@@ -33,6 +51,10 @@ class Settings(BaseSettings):
             return json.loads(self.CORS_ORIGINS)
         except Exception:
             return ["http://localhost:3000", "http://localhost:5173"]
+
+    @property
+    def async_database_url(self) -> str:
+        return _async_db_url(self.DATABASE_URL)
 
     @property
     def email_recipients_list(self) -> List[str]:
