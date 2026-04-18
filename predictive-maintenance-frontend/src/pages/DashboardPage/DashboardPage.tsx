@@ -48,6 +48,15 @@ const DashboardPage: React.FC = () => {
     liveData[id] = liveQueries[i].data ?? [];
   });
 
+  // ── Voice Alert (Browser TTS) for critical alerts ─────────────────────
+  const speak = React.useCallback((text: string) => {
+    if ('speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1.1; u.pitch = 0.9; u.volume = 1;
+      window.speechSynthesis.speak(u);
+    }
+  }, []);
+
   // WebSocket for real-time alerts and notifications — ALL machines
   const handleWsMessage = React.useCallback((type: string, payload: unknown) => {
     const p = payload as Record<string, unknown>;
@@ -62,6 +71,8 @@ const DashboardPage: React.FC = () => {
         { duration: 8000, id: `pfa-${p.machineId}` });
       // Stage 2: sound fires after delay (handled inside playAlert)
       playAlert(sev as any);
+      // Stage 3: voice alert for critical
+      if (sev === 'critical') speak(`Critical alert. ${p.machineName} predicted to fail in ${label}.`);
       qc.invalidateQueries('alerts');
       qc.invalidateQueries('alert-summary');
     }
@@ -82,6 +93,8 @@ const DashboardPage: React.FC = () => {
         });
         // Stage 2: sound fires after severity-based delay (inside playAlert)
         playAlert(sev as any);
+        // Stage 3: voice for critical
+        if (sev === 'critical') speak(`Critical alert on ${p.machineName}. ${p.title}`);
       }
       qc.invalidateQueries('alerts');
       qc.invalidateQueries('alert-summary');
@@ -94,6 +107,7 @@ const DashboardPage: React.FC = () => {
         { duration: 12000, id: `esc-${p.alertId}` }
       );
       playAlert('critical');
+      speak(`Auto escalated. ${p.machineName} was not acknowledged. Dispatched to ${p.assignedTo}.`);
       qc.invalidateQueries('alerts');
       qc.invalidateQueries('alert-summary');
       qc.invalidateQueries('maintenance');
@@ -104,7 +118,7 @@ const DashboardPage: React.FC = () => {
         { duration: 8000, id: `cas-${p.affectedMachineId}` });
       playAlert('warning');
     }
-  }, [qc, playAlert]);
+  }, [qc, playAlert, speak]);
 
   useWebSocket({ path: '/ws/CNC_01', onMessage: handleWsMessage });
   useWebSocket({ path: '/ws/CNC_02', onMessage: handleWsMessage });
