@@ -11,11 +11,11 @@ interface WorkOrder {
 }
 
 const WO_STATUS: Record<string, { color: string; bg: string; icon: string }> = {
-  pending:     { color: '#f59e0b', bg: '#fffbeb', icon: '•' },
-  scheduled:   { color: '#1a56db', bg: '#eff6ff', icon: '•' },
-  in_progress: { color: '#8b5cf6', bg: '#f5f3ff', icon: '•' },
-  completed:   { color: '#059669', bg: '#f0fdf4', icon: '✓' },
-  cancelled:   { color: '#94a3b8', bg: '#f8fafc', icon: '×' },
+  pending:     { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', icon: '•' },
+  scheduled:   { color: '#1a56db', bg: 'rgba(26,86,219,0.1)', icon: '•' },
+  in_progress: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)', icon: '•' },
+  completed:   { color: '#059669', bg: 'rgba(5,150,105,0.1)', icon: '✓' },
+  cancelled:   { color: 'var(--color-muted)', bg: 'var(--color-surface-alt)', icon: '×' },
 };
 
 const WO_TYPE: Record<string, { icon: string; color: string }> = {

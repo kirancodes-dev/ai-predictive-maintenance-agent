@@ -2,16 +2,16 @@ import React from 'react';
 import type { Alert } from '../../../types/alert.types';
 
 const SEV_COLORS: Record<string, { border: string; bg: string; text: string; icon: string }> = {
-  info:     { border: '#1a56db', bg: '#eff6ff', text: '#1d4ed8', icon: 'i' },
-  warning:  { border: '#f59e0b', bg: '#fffbeb', text: '#b45309', icon: '!' },
-  error:    { border: '#f97316', bg: '#fff7ed', text: '#c2410c', icon: '!!' },
-  critical: { border: '#dc2626', bg: '#fef2f2', text: '#dc2626', icon: '!!!' },
+  info:     { border: '#1a56db', bg: 'rgba(26,86,219,0.1)', text: '#1d4ed8', icon: 'i' },
+  warning:  { border: '#f59e0b', bg: 'rgba(245,158,11,0.1)', text: '#b45309', icon: '!' },
+  error:    { border: '#f97316', bg: 'rgba(249,115,22,0.1)', text: '#c2410c', icon: '!!' },
+  critical: { border: '#dc2626', bg: 'rgba(239,68,68,0.1)', text: '#dc2626', icon: '!!!' },
 };
 
 const STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> = {
-  active:       { bg: '#fef2f2', text: '#ef4444', label: 'Active' },
-  acknowledged: { bg: '#eff6ff', text: '#1a56db', label: 'Acknowledged' },
-  resolved:     { bg: '#f0fdf4', text: '#22c55e', label: 'Resolved' },
+  active:       { bg: 'rgba(239,68,68,0.1)', text: '#ef4444', label: 'Active' },
+  acknowledged: { bg: 'rgba(26,86,219,0.1)', text: '#1a56db', label: 'Acknowledged' },
+  resolved:     { bg: 'rgba(34,197,94,0.1)', text: '#22c55e', label: 'Resolved' },
 };
 
 function timeAgo(ts: string): string {
@@ -201,7 +201,7 @@ const AlertPanel: React.FC<Props> = ({
                       padding: '4px 12px',
                       border: '1px solid #6366f1',
                       borderRadius: 6,
-                      background: '#eef2ff',
+                      background: 'rgba(99,102,241,0.1)',
                       color: '#6366f1',
                       cursor: 'pointer',
                       fontWeight: 600,
@@ -212,7 +212,7 @@ const AlertPanel: React.FC<Props> = ({
                       e.currentTarget.style.color = '#fff';
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.background = '#eef2ff';
+                      e.currentTarget.style.background = 'rgba(99,102,241,0.1)';
                       e.currentTarget.style.color = '#6366f1';
                     }}
                   >
@@ -226,7 +226,7 @@ const AlertPanel: React.FC<Props> = ({
                     padding: '4px 12px',
                     border: '1px solid #22c55e',
                     borderRadius: 6,
-                    background: '#f0fdf4',
+                    background: 'rgba(34,197,94,0.1)',
                     color: '#16a34a',
                     cursor: 'pointer',
                     fontWeight: 600,
@@ -237,7 +237,7 @@ const AlertPanel: React.FC<Props> = ({
                     e.currentTarget.style.color = '#fff';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.background = '#f0fdf4';
+                    e.currentTarget.style.background = 'rgba(34,197,94,0.1)';
                     e.currentTarget.style.color = '#16a34a';
                   }}
                 >

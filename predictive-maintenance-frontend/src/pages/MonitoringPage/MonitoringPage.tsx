@@ -63,8 +63,8 @@ const MonitoringPage: React.FC = () => {
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '14px 20px', borderRadius: 14, cursor: 'pointer',
-                border: `2.5px solid ${isActive ? RISK_COLORS[m.risk] : '#e2e8f0'}`,
-                background: isActive ? `${RISK_COLORS[m.risk]}10` : '#fff',
+                border: `2.5px solid ${isActive ? RISK_COLORS[m.risk] : 'var(--color-border)'}`,
+                background: isActive ? `${RISK_COLORS[m.risk]}10` : 'var(--color-surface)',
                 boxShadow: isActive ? `0 0 0 3px ${RISK_COLORS[m.risk]}18, 0 4px 12px rgba(0,0,0,0.08)` : '0 1px 4px rgba(0,0,0,0.05)',
                 transition: 'all 0.2s',
               }}>
@@ -74,7 +74,7 @@ const MonitoringPage: React.FC = () => {
                               color: isActive ? RISK_COLORS[m.risk] : '#0f172a' }}>
                   {m.name}
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{m.type}</div>
+                <div style={{ fontSize: 11, color: 'var(--color-muted)', marginTop: 1 }}>{m.type}</div>
               </div>
               <span style={{
                 fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 12,
@@ -89,14 +89,14 @@ const MonitoringPage: React.FC = () => {
       </div>
 
       {/* Live / History tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e2e8f0' }}>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid var(--color-border)' }}>
         {(['live', 'history'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             style={{
               padding: '10px 24px', fontSize: 14, fontWeight: 700, border: 'none',
               background: 'none', cursor: 'pointer',
               borderBottom: activeTab === tab ? '3px solid #3b82f6' : '3px solid transparent',
-              marginBottom: -2, color: activeTab === tab ? '#3b82f6' : '#64748b',
+              marginBottom: -2, color: activeTab === tab ? '#3b82f6' : 'var(--color-muted)',
               transition: 'all 0.15s',
             }}>
             {tab === 'live' ? 'Live Stream' : 'Historical Data'}

@@ -45,9 +45,9 @@ const TIER_STYLES: Record<number, React.CSSProperties> = {
 };
 
 const TIER_LABELS: Record<number, { text: string; color: string; bg: string }> = {
-  1: { text: '⚡ Level 1 — Warning', color: '#92400e', bg: '#fef3c7' },
-  2: { text: '🔶 Level 2 — High Risk', color: '#9a3412', bg: '#ffedd5' },
-  3: { text: '🚨 Level 3 — CRITICAL ALARM', color: '#991b1b', bg: '#fee2e2' },
+  1: { text: '⚡ Level 1 — Warning', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  2: { text: '🔶 Level 2 — High Risk', color: '#f97316', bg: 'rgba(249,115,22,0.12)' },
+  3: { text: '🚨 Level 3 — CRITICAL ALARM', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
 };
 
 interface Props {
@@ -156,7 +156,7 @@ const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) =>
             background: 'var(--color-surface, #fff)', borderRadius: 14, padding: '1rem 1.25rem',
             border: `1.5px solid ${tierStyle.borderColor ?? (hasAnomaly ? '#fca5a5' : STATUS_COLORS[m.status] ?? 'var(--color-border, #e2e8f0)')}`,
             boxShadow: tierStyle.boxShadow ?? (hasAnomaly
-              ? '0 0 0 2px #fee2e233, 0 2px 8px var(--color-card-shadow, rgba(0,0,0,0.06))'
+              ? '0 0 0 2px rgba(239,68,68,0.1), 0 2px 8px var(--color-card-shadow, rgba(0,0,0,0.06))'
               : '0 1px 4px var(--color-card-shadow, rgba(0,0,0,0.06))'),
             transition: 'all 0.2s ease',
             animation: tierStyle.animation as string | undefined,
@@ -207,7 +207,7 @@ const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) =>
                 </span>
                 {hasAnomaly && (
                   <span style={{ fontSize: 10, color: '#ef4444', fontWeight: 700,
-                                 background: '#fee2e2', padding: '1px 6px', borderRadius: 8 }}>
+                                 background: 'rgba(239,68,68,0.12)', padding: '1px 6px', borderRadius: 8 }}>
                     ⚠ Anomaly
                   </span>
                 )}

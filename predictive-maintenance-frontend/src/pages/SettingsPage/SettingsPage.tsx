@@ -298,15 +298,15 @@ const SettingsPage: React.FC = () => {
           </div>
 
           {loading ? (
-            <p style={{ color: '#94a3b8', fontSize: 13 }}>Loading thresholds...</p>
+            <p style={{ color: 'var(--color-muted)', fontSize: 13 }}>Loading thresholds...</p>
           ) : thresholds.length === 0 ? (
-            <p style={{ color: '#94a3b8', fontSize: 13 }}>No sensors configured for this machine.</p>
+            <p style={{ color: 'var(--color-muted)', fontSize: 13 }}>No sensors configured for this machine.</p>
           ) : (
             <>
               {thresholds.map((t, idx) => (
                 <div key={t.id} style={{ marginBottom: '1.25rem', padding: '1rem', background: 'var(--color-surface-alt)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
                   <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: 8 }}>
-                    {t.name} <span style={{ fontWeight: 400, color: '#94a3b8' }}>({t.unit})</span>
+                    {t.name} <span style={{ fontWeight: 400, color: 'var(--color-muted)' }}>({t.unit})</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.75rem' }}>
                     <div>

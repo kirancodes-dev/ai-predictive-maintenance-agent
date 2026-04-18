@@ -66,7 +66,7 @@ const MachineCard: React.FC<{ machineId: string }> = ({ machineId }) => {
       borderRadius: 12,
       border: `1px solid ${totalAnomalies > 0 ? '#fca5a5' : 'var(--color-border, #e2e8f0)'}`,
       boxShadow: totalAnomalies > 0
-        ? '0 0 0 2px #fee2e233'
+        ? '0 0 0 2px rgba(239,68,68,0.1)'
         : '0 1px 4px var(--color-card-shadow, rgba(0,0,0,0.06))',
       overflow: 'hidden',
       transition: 'border-color 0.3s, box-shadow 0.3s',
@@ -93,7 +93,7 @@ const MachineCard: React.FC<{ machineId: string }> = ({ machineId }) => {
               <span style={{ fontSize: 15, fontWeight: 700 }}>{label}</span>
               {totalAnomalies > 0 && (
                 <span style={{
-                  background: '#fee2e2', color: '#ef4444', borderRadius: 12,
+                  background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 12,
                   padding: '1px 8px', fontSize: 11, fontWeight: 700,
                 }}>
                   ⚠ {totalAnomalies}

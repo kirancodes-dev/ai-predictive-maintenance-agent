@@ -77,7 +77,7 @@ const ThresholdOverrideModal: React.FC<Props> = ({ machineId, machineName, basel
 
         <div style={{ marginBottom: 20 }}>
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Manual Threshold Override</h2>
-          <p style={{ margin: '6px 0 0', fontSize: 12, color: '#94a3b8' }}>
+          <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--color-muted)' }}>
             {machineName} · Overrides the auto-computed 7-day baseline. Use for machines in unusual
             environments (e.g. cold storage, high-heat zones).
           </p>
@@ -96,11 +96,11 @@ const ThresholdOverrideModal: React.FC<Props> = ({ machineId, machineName, basel
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <span style={{ fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>{cfg.icon}</span> {cfg.label} <span style={{ color: '#94a3b8', fontWeight: 400 }}>({cfg.unit})</span>
+                    <span>{cfg.icon}</span> {cfg.label} <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}>({cfg.unit})</span>
                   </span>
                   {hasOverride && (
                     <button onClick={() => handleClear(type)} style={{
-                      fontSize: 11, color: '#ef4444', background: '#fee2e2', border: 'none',
+                      fontSize: 11, color: '#ef4444', background: 'rgba(239,68,68,0.1)', border: 'none',
                       borderRadius: 6, padding: '2px 10px', cursor: 'pointer', fontWeight: 600,
                     }}>
                       Reset to auto
@@ -115,7 +115,7 @@ const ThresholdOverrideModal: React.FC<Props> = ({ machineId, machineName, basel
                     ['criticalMax', '🔴 Crit Max'],
                   ] as [keyof ThresholdOverride, string][]).map(([field, label]) => (
                     <label key={field} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600 }}>{label}</span>
+                      <span style={{ fontSize: 10, color: 'var(--color-muted)', fontWeight: 600 }}>{label}</span>
                       <input
                         type="number"
                         step="0.1"

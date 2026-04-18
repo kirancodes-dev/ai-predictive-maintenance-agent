@@ -58,8 +58,8 @@ const FailurePredictionCard: React.FC<{ prediction: RichPrediction }> = ({ predi
         style={{
           marginTop: '0.75rem',
           fontSize: '0.8rem',
-          color: '#555',
-          background: '#f8fafc',
+          color: 'var(--color-muted)',
+          background: 'var(--color-surface-alt)',
           borderRadius: '6px',
           padding: '0.4rem 0.6rem',
         }}

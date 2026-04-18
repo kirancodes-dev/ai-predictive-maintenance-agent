@@ -19,7 +19,7 @@
 .floor-map__subtitle {
   margin: 4px 0 0;
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--color-muted, #94a3b8);
 }
 
 .floor-map__canvas {
@@ -129,7 +129,7 @@
 
 .floor-map__sensor-label {
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--color-muted, #94a3b8);
   font-weight: 600;
 }
 

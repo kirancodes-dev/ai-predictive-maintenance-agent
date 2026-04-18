@@ -31,7 +31,7 @@ const TechnicianAvailability: React.FC = () => {
             marginLeft: 'auto',
             fontSize: '0.75rem',
             color: '#16a34a',
-            background: '#f0fdf4',
+            background: 'rgba(34,197,94,0.1)',
             padding: '0.15rem 0.6rem',
             borderRadius: '9999px',
           }}
@@ -82,7 +82,7 @@ const TechCard: React.FC<TechCardProps> = ({ tech, status }) => {
         padding: '0.625rem 0.875rem',
         borderRadius: '8px',
         background: 'var(--color-surface, #fff)',
-        border: `1px solid ${status === 'available' ? '#bbf7d0' : status === 'busy' ? '#fde68a' : 'var(--color-border, #e2e8f0)'}`,
+        border: `1px solid ${status === 'available' ? 'rgba(34,197,94,0.3)' : status === 'busy' ? 'rgba(245,158,11,0.3)' : 'var(--color-border, #e2e8f0)'}`,
         borderLeft: `3px solid ${cfg.dot}`,
       }}
     >

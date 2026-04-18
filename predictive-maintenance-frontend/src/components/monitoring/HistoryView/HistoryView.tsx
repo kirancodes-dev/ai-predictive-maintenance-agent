@@ -68,8 +68,8 @@ const HistoryView: React.FC<Props> = ({ machineId, machineName }) => {
 
   const healthColor = overallHealth === null ? '#6b7280'
     : overallHealth >= 80 ? '#16a34a' : overallHealth >= 60 ? '#d97706' : '#ef4444';
-  const healthBg = overallHealth === null ? '#f3f4f6'
-    : overallHealth >= 80 ? '#f0fdf4' : overallHealth >= 60 ? '#fffbeb' : '#fee2e2';
+  const healthBg = overallHealth === null ? 'var(--color-surface-alt)'
+    : overallHealth >= 80 ? 'rgba(34,197,94,0.1)' : overallHealth >= 60 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)';
 
   const exportCsv = () => {
     if (!histories?.length) return;
@@ -103,23 +103,23 @@ const HistoryView: React.FC<Props> = ({ machineId, machineName }) => {
                 onClick={() => { setActivePreset(p.minutes); setUseCustom(false); }}
                 style={{
                   padding: '5px 14px', fontSize: 12, fontWeight: 600, borderRadius: 8,
-                  border: '1px solid #e2e8f0', cursor: 'pointer', transition: 'all 0.15s',
+                  border: '1px solid var(--color-border)', cursor: 'pointer', transition: 'all 0.15s',
                   background: !useCustom && activePreset === p.minutes ? '#3b82f6' : 'none',
-                  color: !useCustom && activePreset === p.minutes ? '#fff' : '#64748b',
+                  color: !useCustom && activePreset === p.minutes ? '#fff' : 'var(--color-muted)',
                 }}>
                 {p.label}
               </button>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <label style={{ fontSize: 12, color: '#94a3b8' }}>Custom:</label>
+            <label style={{ fontSize: 12, color: 'var(--color-muted)' }}>Custom:</label>
             <input type="datetime-local" value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
-              style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6 }} />
-            <span style={{ fontSize: 12, color: '#94a3b8' }}>→</span>
+              style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--color-border)', borderRadius: 6, background: 'var(--color-input-bg)', color: 'var(--color-text)' }} />
+            <span style={{ fontSize: 12, color: 'var(--color-muted)' }}>→</span>
             <input type="datetime-local" value={customTo}
               onChange={(e) => setCustomTo(e.target.value)}
-              style={{ padding: '4px 8px', fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6 }} />
+              style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--color-border)', borderRadius: 6, background: 'var(--color-input-bg)', color: 'var(--color-text)' }} />
             <button
               onClick={() => { if (customFrom && customTo) setUseCustom(true); }}
               disabled={!customFrom || !customTo}
@@ -140,19 +140,20 @@ const HistoryView: React.FC<Props> = ({ machineId, machineName }) => {
             </div>
           )}
           {!isLoading && dataPoints > 0 && (
-            <span style={{ fontSize: 12, color: '#94a3b8' }}>{dataPoints.toLocaleString()} pts</span>
+            <span style={{ fontSize: 12, color: 'var(--color-muted)' }}>{dataPoints.toLocaleString()} pts</span>
           )}
           <button onClick={exportCsv} disabled={!histories?.length}
             style={{ padding: '6px 14px', fontSize: 12, fontWeight: 600,
-                     border: '1px solid #e2e8f0', borderRadius: 8, background: 'none',
-                     cursor: 'pointer', opacity: histories?.length ? 1 : 0.5 }}>
+                     border: '1px solid var(--color-border)', borderRadius: 8, background: 'none',
+                     cursor: 'pointer', opacity: histories?.length ? 1 : 0.5,
+                     color: 'var(--color-text)' }}>
             ↓ CSV
           </button>
         </div>
       </div>
 
       {isError && (
-        <div style={{ padding: '12px 16px', background: '#fee2e2', borderRadius: 8,
+        <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.1)', borderRadius: 8,
                       color: '#ef4444', fontSize: 13 }}>
           Failed to load history. Ensure the simulation server is running.
         </div>
@@ -168,7 +169,7 @@ const HistoryView: React.FC<Props> = ({ machineId, machineName }) => {
 
       <CombinedChartPanel data={combinedData} mode="history" height={420} isLoading={isLoading} />
 
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11, color: '#94a3b8', paddingLeft: 4 }}>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11, color: 'var(--color-muted)', paddingLeft: 4 }}>
         {KNOWN_SENSOR_TYPES.map((t) => (
           <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%',

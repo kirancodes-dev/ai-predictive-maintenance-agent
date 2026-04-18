@@ -48,8 +48,8 @@ const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
 
   const healthColor = overallHealth === null ? '#6b7280'
     : overallHealth >= 80 ? '#16a34a' : overallHealth >= 60 ? '#d97706' : '#ef4444';
-  const healthBg = overallHealth === null ? '#f3f4f6'
-    : overallHealth >= 80 ? '#f0fdf4' : overallHealth >= 60 ? '#fffbeb' : '#fee2e2';
+  const healthBg = overallHealth === null ? 'var(--color-surface-alt)'
+    : overallHealth >= 80 ? 'rgba(34,197,94,0.1)' : overallHealth >= 60 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -67,7 +67,7 @@ const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
             {machineName ? ` — ${machineName}` : ''}
           </span>
           {totalAnomalies > 0 && (
-            <span style={{ background: '#fee2e2', color: '#ef4444', borderRadius: 12,
+            <span style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 12,
                            padding: '2px 10px', fontSize: 12, fontWeight: 700 }}>
               ⚠ {totalAnomalies} anomal{totalAnomalies > 1 ? 'ies' : 'y'}
             </span>
@@ -81,27 +81,29 @@ const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
               <span style={{ fontSize: 12, fontWeight: 600, color: healthColor }}>
                 {overallHealth >= 80 ? '✓' : overallHealth >= 60 ? '⚠' : '✗'} Health {overallHealth}%
               </span>
-              <span style={{ fontSize: 10, color: '#94a3b8' }}>auto-baseline</span>
+              <span style={{ fontSize: 10, color: 'var(--color-muted)' }}>auto-baseline</span>
             </div>
           )}
           {baselineLoading && (
-            <span style={{ fontSize: 12, color: '#94a3b8' }}>Computing baseline…</span>
+            <span style={{ fontSize: 12, color: 'var(--color-muted)' }}>Computing baseline…</span>
           )}
           {computedAt && !baselineLoading && (
-            <span style={{ fontSize: 11, color: '#94a3b8' }}>
+            <span style={{ fontSize: 11, color: 'var(--color-muted)' }}>
               Baseline: {new Date(computedAt).toLocaleTimeString()}
             </span>
           )}
-          <span style={{ fontSize: 12, color: '#94a3b8' }}>{readings.length} readings</span>
+          <span style={{ fontSize: 12, color: 'var(--color-muted)' }}>{readings.length} readings</span>
           <button onClick={() => setShowOverride(true)} style={{
-            padding: '4px 12px', fontSize: 12, border: '1px solid #e2e8f0',
+            padding: '4px 12px', fontSize: 12, border: '1px solid var(--color-border)',
             borderRadius: 8, background: 'none', cursor: 'pointer', fontWeight: 600,
+            color: 'var(--color-text)',
           }}>
             ⚙ Thresholds
           </button>
           <button onClick={clearReadings} style={{
-            padding: '4px 12px', fontSize: 12, border: '1px solid #e2e8f0',
+            padding: '4px 12px', fontSize: 12, border: '1px solid var(--color-border)',
             borderRadius: 8, background: 'none', cursor: 'pointer',
+            color: 'var(--color-text)',
           }}>
             Clear
           </button>
@@ -141,7 +143,7 @@ const LiveStream: React.FC<LiveStreamProps> = ({ machineId, machineName }) => {
 
       {/* Threshold legend */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11,
-                    color: '#94a3b8', paddingLeft: 4 }}>
+                    color: 'var(--color-muted)', paddingLeft: 4 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <span style={{ display: 'inline-block', width: 18, height: 2, background: '#f59e0b',
                          borderTop: '2px dashed #f59e0b' }} />

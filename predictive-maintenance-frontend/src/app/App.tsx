@@ -74,7 +74,7 @@ const ProtectedLayout: React.FC = () => {
               <Skeleton width={360} height={13} />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16, marginTop: 8 }}>
                 {[0,1,2,3].map(i => (
-                  <div key={i} style={{ borderRadius: 14, border: '1.5px solid #e2e8f0', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div key={i} style={{ borderRadius: 14, border: '1.5px solid var(--color-border)', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Skeleton width={110} height={14} /><Skeleton width={60} height={22} borderRadius={20} />
                     </div>

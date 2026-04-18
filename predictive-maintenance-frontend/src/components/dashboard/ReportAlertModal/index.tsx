@@ -197,8 +197,8 @@ const ReportAlertModal: React.FC<Props> = ({ onClose }) => {
                 fontWeight: 700,
                 borderRadius: 8,
                 border: 'none',
-                background: canSubmit ? '#dc2626' : '#e2e8f0',
-                color: canSubmit ? '#fff' : '#94a3b8',
+                background: canSubmit ? '#dc2626' : 'var(--color-surface-alt)',
+                color: canSubmit ? '#fff' : 'var(--color-muted)',
                 cursor: canSubmit ? 'pointer' : 'not-allowed',
                 transition: 'all 0.15s',
               }}

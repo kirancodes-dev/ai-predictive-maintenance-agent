@@ -110,8 +110,8 @@ const MachineDetailPage: React.FC = () => {
         </div>
         <div style={{
           padding: '0.5rem 1rem', borderRadius: 8,
-          background: m.status === 'online' ? '#dcfce7' : '#fef2f2',
-          color: m.status === 'online' ? '#166534' : '#991b1b',
+          background: m.status === 'online' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.12)',
+          color: m.status === 'online' ? '#22c55e' : '#ef4444',
           fontWeight: 600,
         }}>
           {m.status?.toUpperCase()}

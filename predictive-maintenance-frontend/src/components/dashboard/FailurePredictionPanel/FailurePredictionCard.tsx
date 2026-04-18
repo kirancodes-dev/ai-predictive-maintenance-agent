@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import type { RichPrediction } from '../../../types/maintenance.types';
 
 const URGENCY_CONFIG = {
-  imminent: { color: '#dc2626', bg: '#fef2f2', label: 'IMMINENT', pulse: true },
-  critical:  { color: '#ef4444', bg: '#fef2f2', label: 'CRITICAL', pulse: true },
-  high:      { color: '#f97316', bg: '#fff7ed', label: 'HIGH', pulse: false },
-  medium:    { color: '#f59e0b', bg: '#fffbeb', label: 'MEDIUM', pulse: false },
-  low:       { color: '#22c55e', bg: '#f0fdf4', label: 'LOW', pulse: false },
+  imminent: { color: '#dc2626', bg: 'rgba(239,68,68,0.1)', label: 'IMMINENT', pulse: true },
+  critical:  { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: 'CRITICAL', pulse: true },
+  high:      { color: '#f97316', bg: 'rgba(249,115,22,0.1)', label: 'HIGH', pulse: false },
+  medium:    { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'MEDIUM', pulse: false },
+  low:       { color: '#22c55e', bg: 'rgba(34,197,94,0.1)', label: 'LOW', pulse: false },
 };
 
 function formatCountdown(hours: number): string {

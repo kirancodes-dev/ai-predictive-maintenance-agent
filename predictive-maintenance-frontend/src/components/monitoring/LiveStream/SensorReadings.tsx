@@ -26,22 +26,22 @@ const SensorReadings: React.FC<Props> = ({ readings }) => {
         const pct = r ? Math.max(0, Math.min(100, ((r.value - dMin) / (dMax - dMin)) * 100)) : 0;
         const isHot = pct > 80;
         const isWarm = pct > 60 && !isHot;
-        const statusColor = !r ? '#94a3b8' : isHot ? '#ef4444' : isWarm ? '#f59e0b' : cfg.color;
+        const statusColor = !r ? 'var(--color-muted)' : isHot ? '#ef4444' : isWarm ? '#f59e0b' : cfg.color;
 
         return (
           <div key={type} style={{
-            background: '#fff', borderRadius: 12, padding: '14px 16px',
-            border: `1.5px solid ${r?.isAnomaly ? '#fca5a5' : '#e2e8f0'}`,
-            boxShadow: r?.isAnomaly ? '0 0 0 2px #fee2e233' : '0 1px 3px rgba(0,0,0,0.05)',
+            background: 'var(--color-surface)', borderRadius: 12, padding: '14px 16px',
+            border: `1.5px solid ${r?.isAnomaly ? '#fca5a5' : 'var(--color-border)'}`,
+            boxShadow: r?.isAnomaly ? '0 0 0 2px rgba(239,68,68,0.1)' : '0 1px 3px rgba(0,0,0,0.05)',
             transition: 'border-color 0.3s',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ fontSize: 16 }}>{cfg.icon}</span>
                 {cfg.label}
               </span>
               {r?.isAnomaly && (
-                <span style={{ fontSize: 10, background: '#fee2e2', color: '#ef4444',
+                <span style={{ fontSize: 10, background: 'rgba(239,68,68,0.12)', color: '#ef4444',
                                borderRadius: 8, padding: '1px 6px', fontWeight: 700 }}>
                   ⚠ ANOMALY
                 </span>
@@ -49,19 +49,19 @@ const SensorReadings: React.FC<Props> = ({ readings }) => {
             </div>
             <div style={{ fontSize: 26, fontWeight: 700, color: statusColor, lineHeight: 1, marginBottom: 6 }}>
               {r ? r.value.toFixed(2) : '—'}
-              <span style={{ fontSize: 12, fontWeight: 500, marginLeft: 4, color: '#94a3b8' }}>
+              <span style={{ fontSize: 12, fontWeight: 500, marginLeft: 4, color: 'var(--color-muted)' }}>
                 {cfg.unit}
               </span>
             </div>
             {/* Progress bar */}
-            <div style={{ height: 4, borderRadius: 4, background: '#f1f5f9', overflow: 'hidden' }}>
+            <div style={{ height: 4, borderRadius: 4, background: 'var(--color-surface-alt)', overflow: 'hidden' }}>
               <div style={{
                 height: '100%', width: `${pct}%`,
                 background: statusColor, borderRadius: 4,
                 transition: 'width 0.4s ease, background 0.3s ease',
               }} />
             </div>
-            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+            <div style={{ fontSize: 10, color: 'var(--color-muted)', marginTop: 4 }}>
               {r ? `${pct.toFixed(0)}% of range` : 'No data'}
             </div>
           </div>

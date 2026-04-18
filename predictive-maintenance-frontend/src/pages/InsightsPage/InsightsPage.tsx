@@ -18,17 +18,17 @@ const PhaseBar: React.FC<{ phase: number; pct: number }> = ({ phase, pct }) => {
   const colors = ['#22c55e', '#f59e0b', '#f97316', '#ef4444'];
   return (
     <div style={{ marginTop: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#94a3b8', marginBottom: 3 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--color-muted)', marginBottom: 3 }}>
         <span>Healthy</span><span>Fault</span>
       </div>
-      <div style={{ height: 8, borderRadius: 4, background: '#e2e8f0', overflow: 'hidden', position: 'relative' }}>
+      <div style={{ height: 8, borderRadius: 4, background: 'var(--color-border)', overflow: 'hidden', position: 'relative' }}>
         <div style={{
           height: '100%', borderRadius: 4, transition: 'width 0.6s ease',
           width: `${Math.max(2, pct)}%`,
           background: `linear-gradient(90deg, #22c55e, ${colors[phase]})`,
         }} />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--color-muted)', marginTop: 2 }}>
         {['Phase 0', 'Phase 1', 'Phase 2', 'Phase 3'].map((p, i) => (
           <span key={i} style={{ color: i === phase ? colors[i] : undefined, fontWeight: i === phase ? 700 : 400 }}>{p}</span>
         ))}
@@ -38,10 +38,10 @@ const PhaseBar: React.FC<{ phase: number; pct: number }> = ({ phase, pct }) => {
 };
 
 const StatCard: React.FC<{ label: string; value: string; sub?: string; color?: string }> = ({ label, value, sub, color }) => (
-  <div style={{ background: 'var(--color-surface-alt,#f8fafc)', borderRadius: 10, padding: '12px 16px', flex: 1, minWidth: 120 }}>
-    <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginBottom: 4 }}>{label}</div>
-    <div style={{ fontSize: 22, fontWeight: 800, color: color || 'var(--color-text,#111)', lineHeight: 1 }}>{value}</div>
-    {sub && <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{sub}</div>}
+  <div style={{ background: 'var(--color-surface-alt)', borderRadius: 10, padding: '12px 16px', flex: 1, minWidth: 120 }}>
+    <div style={{ fontSize: 11, color: 'var(--color-muted)', fontWeight: 600, marginBottom: 4 }}>{label}</div>
+    <div style={{ fontSize: 22, fontWeight: 800, color: color || 'var(--color-text)', lineHeight: 1 }}>{value}</div>
+    {sub && <div style={{ fontSize: 11, color: 'var(--color-muted)', marginTop: 2 }}>{sub}</div>}
   </div>
 );
 
@@ -174,20 +174,21 @@ const InsightsPage: React.FC = () => {
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
             AI Intelligence Center
           </h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#94a3b8' }}>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--color-muted)' }}>
             Failure phase fingerprinting · Sensor correlation · Predictive ROI · Shift-aware risk calendar · Maintenance windows
           </p>
         </div>
         <button onClick={() => loadAnalysis(selected)} disabled={loading} style={{
-          padding: '8px 16px', borderRadius: 8, border: '1.5px solid #e2e8f0',
-          background: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600,
+          padding: '8px 16px', borderRadius: 8, border: '1.5px solid var(--color-border)',
+          background: 'var(--color-surface)', cursor: loading ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600,
+          color: 'var(--color-text)',
         }}>
           {loading ? '⟳ Refreshing…' : '⟳ Refresh'}
         </button>
       </div>
 
       {error && (
-        <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#b91c1c' }}>
+        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: 'var(--color-danger)' }}>
           ⚠ {error}
         </div>
       )}
@@ -216,7 +217,7 @@ const InsightsPage: React.FC = () => {
               </div>
               {p ? (
                 <>
-                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-muted)', marginTop: 6 }}>
                     {p.failure_mode}
                   </div>
                   <div style={{ fontSize: 11, marginTop: 4, color: pColor, fontWeight: 600 }}>
@@ -240,7 +241,7 @@ const InsightsPage: React.FC = () => {
                   <Skeleton width="70%" height={10} style={{ marginTop: 6 }} />
                 </>
               ) : (
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>No data</div>
+                <div style={{ fontSize: 11, color: 'var(--color-muted)', marginTop: 6 }}>No data</div>
               )}
             </div>
           );
@@ -260,11 +261,11 @@ const InsightsPage: React.FC = () => {
               <div style={{ borderRadius: 14, border: `2px solid ${phase.phase_color}`, padding: '20px 24px', background: `${phase.phase_color}08` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
                       Failure Mode Fingerprint
                     </div>
                     <div style={{ fontSize: 18, fontWeight: 800 }}>{phase.failure_mode}</div>
-                    <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{phase.machine_name}</div>
+                    <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 2 }}>{phase.machine_name}</div>
                   </div>
                   <div style={{
                     background: phase.phase_color, color: '#fff', borderRadius: 12,
@@ -276,7 +277,7 @@ const InsightsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ fontSize: 13, color: '#475569', marginBottom: 14, lineHeight: 1.6 }}>
+                <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 14, lineHeight: 1.6 }}>
                   {phase.phase_description}
                 </div>
 
@@ -292,7 +293,7 @@ const InsightsPage: React.FC = () => {
                 {/* Sensor deltas table */}
                 {phase.sensor_deltas && Object.keys(phase.sensor_deltas).length > 0 && (
                   <div style={{ marginTop: 16 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
                       Sensor Analysis
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
@@ -301,15 +302,15 @@ const InsightsPage: React.FC = () => {
                         const sign = sd.delta >= 0 ? '+' : '';
                         return (
                           <div key={sd.label} style={{
-                            background: elevated ? '#fff7ed' : 'var(--color-surface-alt,#f8fafc)',
-                            border: `1px solid ${elevated ? '#fed7aa' : '#e2e8f0'}`,
+                            background: elevated ? 'rgba(249,115,22,0.1)' : 'var(--color-surface-alt)',
+                            border: `1px solid ${elevated ? 'rgba(249,115,22,0.3)' : 'var(--color-border)'}`,
                             borderRadius: 8, padding: '8px 12px',
                           }}>
-                            <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>{sd.label}</div>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)' }}>{sd.label}</div>
                             <div style={{ fontSize: 16, fontWeight: 700, color: elevated ? '#ea580c' : 'inherit' }}>
-                              {sd.current} <span style={{ fontSize: 11, color: '#94a3b8' }}>{sd.unit}</span>
+                              {sd.current} <span style={{ fontSize: 11, color: 'var(--color-muted)' }}>{sd.unit}</span>
                             </div>
-                            <div style={{ fontSize: 11, color: elevated ? '#ea580c' : '#94a3b8' }}>
+                            <div style={{ fontSize: 11, color: elevated ? '#ea580c' : 'var(--color-muted)' }}>
                               {sign}{sd.delta} ({sign}{sd.pct_change}%) vs baseline
                             </div>
                           </div>
@@ -323,14 +324,14 @@ const InsightsPage: React.FC = () => {
 
             {/* ROI Card */}
             {roi && (
-              <div style={{ borderRadius: 14, border: '1.5px solid #e2e8f0', padding: '20px 24px', background: 'var(--color-surface,#fff)' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+              <div style={{ borderRadius: 14, border: '1.5px solid var(--color-border)', padding: '20px 24px', background: 'var(--color-surface)' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
                   Early Detection Value
                 </div>
                 <div style={{ fontSize: 36, fontWeight: 900, color: '#16a34a', lineHeight: 1 }}>
                   {roi.detection_value}
                 </div>
-                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: 'var(--color-muted)', marginTop: 4, marginBottom: 16 }}>
                   total estimated savings vs run-to-failure
                 </div>
 
@@ -339,16 +340,16 @@ const InsightsPage: React.FC = () => {
                   { label: 'Emergency repair avoided', value: `$${roi.emergency_repair_cost?.toLocaleString()} → $${roi.planned_maintenance_cost?.toLocaleString()}`, amount: `$${roi.repair_cost_saved?.toLocaleString()}` },
                   { label: 'Production units saved', value: 'avoided lost output', amount: `${roi.production_units_saved?.toLocaleString()} units` },
                 ].map(row => (
-                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid var(--color-border-light)' }}>
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 600 }}>{row.label}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{row.value}</div>
+                      <div style={{ fontSize: 11, color: 'var(--color-muted)' }}>{row.value}</div>
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>{row.amount}</div>
                   </div>
                 ))}
 
-                <div style={{ marginTop: 16, background: '#f0fdf4', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#15803d', lineHeight: 1.5 }}>
+                <div style={{ marginTop: 16, background: 'rgba(22,163,74,0.08)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#15803d', lineHeight: 1.5 }}>
                   <strong>Phase {roi.phase} detection</strong> — acting now costs ${roi.planned_maintenance_cost?.toLocaleString()} (planned). Waiting until fault costs ${roi.emergency_repair_cost?.toLocaleString()} + {roi.unplanned_downtime_hours}h downtime.
                 </div>
               </div>
@@ -361,11 +362,11 @@ const InsightsPage: React.FC = () => {
               borderRadius: 14,
               border: `2px solid ${tod.now_in_risk_window ? '#ef4444' : tod.now_in_safe_window ? '#22c55e' : '#f59e0b'}`,
               padding: '18px 24px',
-              background: tod.now_in_risk_window ? '#fef2f2' : tod.now_in_safe_window ? '#f0fdf4' : '#fffbeb',
+              background: tod.now_in_risk_window ? 'rgba(239,68,68,0.08)' : tod.now_in_safe_window ? 'rgba(34,197,94,0.08)' : 'rgba(245,158,11,0.08)',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
                     Shift-Aware Risk Calendar
                   </div>
                   <div style={{
@@ -375,15 +376,15 @@ const InsightsPage: React.FC = () => {
                   }}>
                     {tod.now_in_risk_window ? '🔴 ACTIVE RISK WINDOW' : tod.now_in_safe_window ? '🟢 SAFE MAINTENANCE WINDOW NOW' : `⚡ Next risk window in ${tod.hours_to_next_risk}h`}
                   </div>
-                  <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{tod.alert}</div>
+                  <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>{tod.alert}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  <div style={{ borderRadius: 10, background: '#fee2e2', padding: '10px 16px', minWidth: 140 }}>
+                  <div style={{ borderRadius: 10, background: 'rgba(239,68,68,0.1)', padding: '10px 16px', minWidth: 140 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', marginBottom: 2 }}>Peak Risk Window</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#991b1b' }}>{tod.peak_risk_window}</div>
                     <div style={{ fontSize: 11, color: '#b91c1c', marginTop: 4, lineHeight: 1.4 }}>{tod.peak_risk_reason}</div>
                   </div>
-                  <div style={{ borderRadius: 10, background: '#dcfce7', padding: '10px 16px', minWidth: 140 }}>
+                  <div style={{ borderRadius: 10, background: 'rgba(34,197,94,0.1)', padding: '10px 16px', minWidth: 140 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', marginBottom: 2 }}>Safest Maintenance Slot</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>{tod.safe_window}</div>
                     <div style={{ fontSize: 11, color: '#166534', marginTop: 4, lineHeight: 1.4 }}>{tod.safe_window_reason}</div>
@@ -398,11 +399,11 @@ const InsightsPage: React.FC = () => {
 
             {/* Correlation Heatmap */}
             {corr && (
-              <div style={{ borderRadius: 14, border: '1.5px solid #e2e8f0', padding: '20px 24px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+              <div style={{ borderRadius: 14, border: '1.5px solid var(--color-border)', padding: '20px 24px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
                   Sensor Correlation Matrix
                 </div>
-                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 16 }}>
                   How sensors move together — broken correlations indicate unusual failure modes
                 </div>
 
@@ -413,14 +414,14 @@ const InsightsPage: React.FC = () => {
                       <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
                         <thead>
                           <tr>
-                            <th style={{ padding: '4px 8px', textAlign: 'left', fontWeight: 600, color: '#94a3b8', fontSize: 11 }}></th>
-                            {sensors.map(s => <th key={s} style={{ padding: '4px 8px', fontWeight: 600, fontSize: 11, color: '#64748b', textAlign: 'center', whiteSpace: 'nowrap' }}>{s}</th>)}
+                            <th style={{ padding: '4px 8px', textAlign: 'left', fontWeight: 600, color: 'var(--color-muted)', fontSize: 11 }}></th>
+                            {sensors.map(s => <th key={s} style={{ padding: '4px 8px', fontWeight: 600, fontSize: 11, color: 'var(--color-text-secondary)', textAlign: 'center', whiteSpace: 'nowrap' }}>{s}</th>)}
                           </tr>
                         </thead>
                         <tbody>
                           {sensors.map(row => (
                             <tr key={row}>
-                              <td style={{ padding: '4px 8px', fontWeight: 600, fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>{row}</td>
+                              <td style={{ padding: '4px 8px', fontWeight: 600, fontSize: 11, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>{row}</td>
                               {sensors.map(col => {
                                 const v: number = corr.matrix[row]?.[col] ?? 0;
                                 const bg = v === 1 ? '#f0fdf4' : `${corrColor(v)}22`;
@@ -428,7 +429,7 @@ const InsightsPage: React.FC = () => {
                                   <td key={col} style={{
                                     padding: '8px 12px', textAlign: 'center', borderRadius: 6,
                                     background: bg, fontWeight: v === 1 ? 400 : 700,
-                                    color: v === 1 ? '#94a3b8' : corrColor(v),
+                                    color: v === 1 ? 'var(--color-muted)' : corrColor(v),
                                     fontSize: 13,
                                   }}>
                                     {v === 1 ? '—' : v.toFixed(2)}
@@ -444,7 +445,7 @@ const InsightsPage: React.FC = () => {
                 </div>
 
                 {/* Legend */}
-                <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: '#94a3b8' }}>
+                <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: 'var(--color-muted)' }}>
                   {[['#16a34a', 'Strong +ve'], ['#ca8a04', 'Weak'], ['#dc2626', 'Negative']].map(([c, l]) => (
                     <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <span style={{ width: 10, height: 10, borderRadius: 2, background: c, display: 'inline-block' }} />{l}
@@ -453,7 +454,7 @@ const InsightsPage: React.FC = () => {
                 </div>
 
                 {corr.anomalies?.length > 0 && (
-                  <div style={{ marginTop: 14, background: '#fff7ed', borderRadius: 8, padding: '10px 14px' }}>
+                  <div style={{ marginTop: 14, background: 'rgba(249,115,22,0.1)', borderRadius: 8, padding: '10px 14px' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#c2410c', marginBottom: 6 }}>
                       ⚠ Anomalous Correlations Detected
                     </div>
@@ -467,18 +468,18 @@ const InsightsPage: React.FC = () => {
 
             {/* Maintenance Windows */}
             {wins && (
-              <div style={{ borderRadius: 14, border: '1.5px solid #e2e8f0', padding: '20px 24px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+              <div style={{ borderRadius: 14, border: '1.5px solid var(--color-border)', padding: '20px 24px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
                   Optimal Maintenance Windows
                 </div>
-                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 16 }}>
                   Based on failure trajectory + shift patterns
                 </div>
 
                 {wins.projected_fault_at && (
-                  <div style={{ background: '#fee2e2', borderRadius: 8, padding: '8px 12px', marginBottom: 16, fontSize: 12 }}>
+                  <div style={{ background: 'rgba(239,68,68,0.1)', borderRadius: 8, padding: '8px 12px', marginBottom: 16, fontSize: 12 }}>
                     <span style={{ color: '#dc2626', fontWeight: 700 }}>Projected fault: </span>
-                    <span style={{ color: '#7f1d1d' }}>
+                    <span style={{ color: 'var(--color-danger)' }}>
                       {new Date(wins.projected_fault_at).toLocaleString()} UTC
                       {wins.rul_hours != null ? ` (~${wins.rul_hours}h)` : ''}
                     </span>
@@ -501,7 +502,7 @@ const InsightsPage: React.FC = () => {
                           </span>
                         </div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: c }}>{w.slot_display}</div>
-                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>{w.reason}</div>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 3 }}>{w.reason}</div>
                         {w.warning && (
                           <div style={{ fontSize: 11, color: '#dc2626', marginTop: 4, fontWeight: 600 }}>⚠ May be too late — prefer Window 1</div>
                         )}
@@ -515,13 +516,13 @@ const InsightsPage: React.FC = () => {
 
           {/* Row 3: AI Incident Report */}
           {report && (
-            <div style={{ borderRadius: 14, border: '1.5px solid #e2e8f0', padding: '20px 24px' }}>
+            <div style={{ borderRadius: 14, border: '1.5px solid var(--color-border)', padding: '20px 24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     AI Incident Analysis Report
                   </div>
-                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>
                     Generated {new Date(report.generated_at).toLocaleString()} · {report.machine_name}
                   </div>
                 </div>
@@ -530,19 +531,20 @@ const InsightsPage: React.FC = () => {
                     Phase {report.phase} — {report.phase_name}
                   </span>
                   <button onClick={exportPdf} style={{
-                    padding: '6px 14px', borderRadius: 8, border: '1.5px solid #1a56db',
-                    background: 'rgba(26,86,219,0.06)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                    color: '#1a56db', display: 'flex', alignItems: 'center', gap: 4,
+                    padding: '6px 14px', borderRadius: 8, border: '1.5px solid var(--color-primary)',
+                    background: 'var(--color-primary-bg)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                    color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: 4,
                     transition: 'all 0.15s',
                   }}
-                  onMouseOver={e => { e.currentTarget.style.background = '#1a56db'; e.currentTarget.style.color = '#fff'; }}
-                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(26,86,219,0.06)'; e.currentTarget.style.color = '#1a56db'; }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'var(--color-primary)'; e.currentTarget.style.color = '#fff'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'var(--color-primary-bg)'; e.currentTarget.style.color = 'var(--color-primary)'; }}
                   >
                     📄 Export PDF
                   </button>
                   <button onClick={() => setReportOpen(!reportOpen)} style={{
-                    padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e2e8f0',
-                    background: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                    padding: '6px 14px', borderRadius: 8, border: '1.5px solid var(--color-border)',
+                    background: 'var(--color-surface)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                    color: 'var(--color-text)',
                   }}>
                     {reportOpen ? '▲ Collapse' : '▼ Expand'}
                   </button>
@@ -563,11 +565,11 @@ const InsightsPage: React.FC = () => {
 
                   {/* Sensor Analysis */}
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8, borderBottom: '1px solid #e2e8f0', paddingBottom: 6 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text)', marginBottom: 8, borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
                       SENSOR READINGS
                     </div>
                     {report.sensor_analysis?.map((line: string, i: number) => (
-                      <div key={i} style={{ fontSize: 12, padding: '5px 0', borderBottom: '1px solid #f1f5f9', color: line.includes('ELEVATED') ? '#ea580c' : 'inherit' }}>
+                      <div key={i} style={{ fontSize: 12, padding: '5px 0', borderBottom: '1px solid var(--color-border-light)', color: line.includes('ELEVATED') ? '#ea580c' : 'inherit' }}>
                         {line}
                       </div>
                     ))}
@@ -575,14 +577,14 @@ const InsightsPage: React.FC = () => {
 
                   {/* Recommendations */}
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8, borderBottom: '1px solid #e2e8f0', paddingBottom: 6 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text)', marginBottom: 8, borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
                       RECOMMENDED ACTIONS
                     </div>
                     {report.recommendations?.map((rec: string, i: number) => (
                       <div key={i} style={{
                         fontSize: 12, padding: '6px 10px', marginBottom: 6, borderRadius: 6,
-                        background: rec.startsWith('⛔') ? '#fee2e2' : '#f8fafc',
-                        border: rec.startsWith('⛔') ? '1px solid #fca5a5' : '1px solid #e2e8f0',
+                        background: rec.startsWith('⛔') ? 'rgba(239,68,68,0.1)' : 'var(--color-surface-alt)',
+                        border: rec.startsWith('⛔') ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--color-border)',
                         fontWeight: rec.startsWith('⛔') ? 700 : 400,
                         color: rec.startsWith('⛔') ? '#dc2626' : 'inherit',
                       }}>
@@ -592,10 +594,10 @@ const InsightsPage: React.FC = () => {
                   </div>
 
                   {/* Correlation Notes + Cost Impact — full width */}
-                  <div style={{ gridColumn: '1 / -1', background: '#f8fafc', borderRadius: 10, padding: '12px 16px' }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 6 }}>CORRELATION NOTES</div>
-                    <div style={{ fontSize: 12, color: '#475569', marginBottom: 12 }}>{report.correlation_notes}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 6 }}>COST IMPACT</div>
+                  <div style={{ gridColumn: '1 / -1', background: 'var(--color-surface-alt)', borderRadius: 10, padding: '12px 16px' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text)', marginBottom: 6 }}>CORRELATION NOTES</div>
+                    <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 12 }}>{report.correlation_notes}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text)', marginBottom: 6 }}>COST IMPACT</div>
                     <div style={{ fontSize: 12, color: '#15803d', fontWeight: 600 }}>{report.cost_impact}</div>
                   </div>
                 </div>
@@ -606,7 +608,7 @@ const InsightsPage: React.FC = () => {
           {/* Automated Sim-Server Reporting Notice */}
           {phase && phase.phase >= 2 && (
             <div style={{
-              borderRadius: 10, border: '1px solid #a7f3d0', background: '#ecfdf5',
+              borderRadius: 10, border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.08)',
               padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 12, fontSize: 13,
             }}>
               <span style={{ fontSize: 18 }}>🔁</span>
@@ -614,7 +616,7 @@ const InsightsPage: React.FC = () => {
                 <strong style={{ color: '#065f46' }}>Auto-Reported to Simulation Server</strong>
                 <div style={{ color: '#047857', fontSize: 12, marginTop: 2 }}>
                   This Phase {phase.phase} ({phase.phase_name}) alert has been automatically POSTed to{' '}
-                  <code style={{ background: '#d1fae5', padding: '1px 6px', borderRadius: 4 }}>
+                  <code style={{ background: 'rgba(16,185,129,0.15)', padding: '1px 6px', borderRadius: 4 }}>
                     /alert
                   </code>{' '}
                   on the simulation API — closing the feedback loop.

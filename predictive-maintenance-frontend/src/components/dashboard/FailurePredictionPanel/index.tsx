@@ -31,7 +31,7 @@ const FailurePredictionPanel: React.FC = () => {
             marginLeft: 'auto',
             fontSize: '0.75rem',
             color: '#6366f1',
-            background: '#eef2ff',
+            background: 'rgba(99,102,241,0.1)',
             padding: '0.15rem 0.6rem',
             borderRadius: '9999px',
           }}
