@@ -221,3 +221,6 @@ dist/
 
 # Claude
 .claude/
+
+# SQLite databases
+*.db
