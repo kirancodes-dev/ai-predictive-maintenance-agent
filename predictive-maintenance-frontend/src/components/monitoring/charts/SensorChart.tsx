@@ -23,9 +23,9 @@ const AnomalyDot = (props: Record<string, unknown>) => {
   if (!payload?.isAnomaly) return null;
   return (
     <g>
-      <circle cx={cx} cy={cy} r={14} fill="#ef4444" fillOpacity={0.12} />
-      <circle cx={cx} cy={cy} r={7} fill="#ef4444" stroke="#fff" strokeWidth={2.5} />
-      <circle cx={cx} cy={cy} r={3} fill="#fff" />
+      <circle cx={cx} cy={cy} r={20} fill="#ef4444" fillOpacity={0.10} />
+      <circle cx={cx} cy={cy} r={11} fill="#ef4444" stroke="#fff" strokeWidth={2.5} />
+      <circle cx={cx} cy={cy} r={4} fill="#fff" />
     </g>
   );
 };
@@ -244,18 +244,18 @@ const SensorChart: React.FC<SensorChartProps> = ({
         {anomalyBands.map((band, i) => (
           <ReferenceArea
             key={i} x1={band.x1} x2={band.x2}
-            fill="#ef4444" fillOpacity={0.12}
-            stroke="#ef4444" strokeOpacity={0.3} strokeWidth={1}
+            fill="#ef4444" fillOpacity={0.22}
+            stroke="#ef4444" strokeOpacity={0.5} strokeWidth={1.5}
           />
         ))}
 
         {/* Main area */}
         <Area
           type="monotone" dataKey="value"
-          stroke={color} strokeWidth={2.5}
+          stroke={color} strokeWidth={3}
           fill={`url(#${gradientId})`}
           dot={<AnomalyDot />}
-          activeDot={{ r: 6, stroke: color, strokeWidth: 2.5, fill: '#fff' }}
+          activeDot={{ r: 7, stroke: color, strokeWidth: 3, fill: '#fff' }}
           isAnimationActive={mode !== 'live'}
           name={label}
         />

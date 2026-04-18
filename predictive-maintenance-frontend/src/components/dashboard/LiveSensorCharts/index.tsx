@@ -27,7 +27,7 @@ const MACHINE_ICONS: Record<string, string> = {
 
 /* ── Per-machine card with expand/collapse ── */
 const MachineCard: React.FC<{ machineId: string }> = ({ machineId }) => {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const { readings, isConnected } = useStreamData(machineId);
 
   const label = MACHINE_LABELS[machineId] ?? machineId;
@@ -157,14 +157,14 @@ const MachineCard: React.FC<{ machineId: string }> = ({ machineId }) => {
       {/* ── Expandable charts section ── */}
       {expanded && (
         <div style={{
-          padding: '0 20px 20px',
+          padding: '0 20px 24px',
           borderTop: '1px solid var(--color-border, #e2e8f0)',
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-            gap: 16,
-            marginTop: 16,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(560px, 1fr))',
+            gap: 24,
+            marginTop: 20,
           }}>
             {KNOWN_SENSOR_TYPES.map((type) => (
               <SensorChartPanel
@@ -172,7 +172,7 @@ const MachineCard: React.FC<{ machineId: string }> = ({ machineId }) => {
                 type={type}
                 data={chartDataByType[type]}
                 mode="live"
-                height={220}
+                height={320}
                 isLoading={false}
               />
             ))}
@@ -195,7 +195,7 @@ const LiveSensorCharts: React.FC<Props> = ({ machineIds }) => {
           <span>Real-Time Sensor Trends</span>
         </h2>
         <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-muted, #94a3b8)' }}>
-          Click "View Charts" on any machine to see live line plots
+          Live sensor readings · spikes highlighted in red · auto-refreshes every 5s
         </p>
       </div>
 
