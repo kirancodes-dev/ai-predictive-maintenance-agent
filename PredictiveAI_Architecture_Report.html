@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>AI Predictive Maintenance - Architecture Report</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;background:#fff;line-height:1.6}
+.cover{background:linear-gradient(135deg,#1a56db 0%,#1e40af 100%);color:#fff;padding:64px 56px 48px;page-break-after:always}
+.cover h1{font-size:40px;font-weight:800;letter-spacing:-1px;margin-bottom:6px}
+.cover h2{font-size:19px;font-weight:400;opacity:.85;margin-bottom:36px}
+.meta-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;background:rgba(255,255,255,.12);border-radius:12px;padding:20px 24px;font-size:13px;max-width:680px}
+.meta-k{font-weight:700;opacity:.75;white-space:nowrap}
+.toc{margin-top:28px;background:rgba(255,255,255,.1);border-radius:10px;padding:18px 24px;max-width:500px}
+.toc h3{font-size:12px;font-weight:700;margin-bottom:10px;opacity:.8;text-transform:uppercase;letter-spacing:.5px}
+.toc ol{padding-left:20px;font-size:13px;line-height:2.1}
+.page{padding:44px 56px;page-break-before:always}
+h2.sec{font-size:24px;font-weight:800;color:#1a56db;border-bottom:3px solid #3b82f6;padding-bottom:8px;margin-bottom:22px}
+h3.sub{font-size:16px;font-weight:700;color:#1e293b;margin:24px 0 8px}
+h4.sub2{font-size:13px;font-weight:700;color:#1a56db;margin:16px 0 5px}
+p{font-size:13.5px;color:#475569;margin-bottom:10px}
+ul,ol{padding-left:20px;color:#475569;font-size:13.5px;margin-bottom:12px}
+li{margin-bottom:5px}
+code{background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:12px;font-family:'Courier New',monospace;color:#0f172a}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#fff;margin-left:6px}
+.br{background:#dc2626} .ba{background:#f59e0b} .bb{background:#1a56db} .bg{background:#059669}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+th{background:#f1f5f9;text-align:left;padding:8px 12px;font-weight:700;color:#1e293b;border-bottom:2px solid #e2e8f0}
+td{padding:7px 12px;border-bottom:1px solid #f1f5f9;color:#475569;vertical-align:top}
+.pre{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;font-family:'Courier New',monospace;font-size:11.5px;white-space:pre;overflow-x:auto;color:#0f172a;line-height:1.7;margin:10px 0}
+.card{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin:10px 0}
+.card h4{font-size:13.5px;font-weight:700;color:#1e293b;margin-bottom:5px}
+.tag{display:inline-block;background:#eff6ff;color:#1a56db;border:1px solid #bfdbfe;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:600;margin:2px}
+.fix{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin:10px 0;border-left:4px solid #1a56db}
+.fix.cr{border-left-color:#dc2626} .fix.hi{border-left-color:#f59e0b} .fix.lo{border-left-color:#059669}
+.fix-t{font-size:13.5px;font-weight:700;color:#1e293b;margin-bottom:4px}
+.fix-p{font-size:12px;color:#64748b;margin:4px 0;font-style:italic}
+.fix-s{font-size:12px;color:#059669;margin:3px 0}
+.api{display:grid;grid-template-columns:58px 220px 1fr;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:12.5px;align-items:start}
+.mt{font-weight:700;font-size:10px;padding:2px 5px;border-radius:3px;color:#fff;text-align:center}
+.get{background:#059669}.post{background:#1a56db}.patch{background:#f59e0b}.delete{background:#dc2626}.ws{background:#7c3aed}
+.ap{font-family:'Courier New',monospace;font-size:11.5px;color:#1e293b}
+.step{display:flex;gap:14px;margin:10px 0;align-items:flex-start}
+.sn{background:#1a56db;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;margin-top:2px}
+.hl{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:12px 16px;margin:12px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{padding:32px 40px}.cover{padding:48px 40px 36px}}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>AI Predictive Maintenance Platform</h1>
+  <h2>Architecture &amp; Workflow Report &mdash; Full Technical Reference</h2>
+  <div class="meta-grid">
+    <span class="meta-k">Platform</span>  <span>AI Predictive Maintenance Agent v2.0</span>
+    <span class="meta-k">Backend</span>   <span>Python 3.11 / FastAPI / SQLAlchemy / asyncpg</span>
+    <span class="meta-k">Frontend</span>  <span>React 18 / Vite / TypeScript / React Query</span>
+    <span class="meta-k">ML Engine</span> <span>Isolation Forest, One-Class SVM, Random Forest, XGBoost</span>
+    <span class="meta-k">Database</span>  <span>SQLite (local) / PostgreSQL + asyncpg (Railway)</span>
+    <span class="meta-k">Deploy</span>    <span>Railway.app &mdash; backend + frontend + simulation server</span>
+    <span class="meta-k">Login</span>     <span>admin@factory.com / Admin@123</span>
+    <span class="meta-k">Date</span>      <span>18 April 2026</span>
+  </div>
+  <div class="toc">
+    <h3>Contents</h3>
+    <ol>
+      <li>System Architecture &amp; Services</li>
+      <li>End-to-End Workflow</li>
+      <li>Data Flow Diagram</li>
+      <li>Machine Learning Algorithms</li>
+      <li>Real-Time Infrastructure</li>
+      <li>AI Intelligence Features</li>
+      <li>Cascade Failure Prevention</li>
+      <li>Alert &amp; Notification System</li>
+      <li>Frontend Architecture</li>
+      <li>Production Issues Fixed</li>
+      <li>API Endpoint Reference</li>
+      <li>Deployment Architecture (Railway)</li>
+    </ol>
+  </div>
+</div>
+
+<!-- 1 -->
+<div class="page">
+<h2 class="sec">1. System Architecture &amp; Services</h2>
+<p>Three independently deployable services communicate over HTTP/REST and WebSocket.</p>
+<div class="grid2">
+  <div class="card"><h4>Simulation Server &mdash; Node.js / Express &mdash; :3000</h4>
+    <p>Generates deterministic sensor data for 4 machines over a 7-day degradation cycle. Serves /history, /stream (SSE), /alert, /schedule-maintenance. Epoch-anchored seed keeps live and history in sync.</p>
+    <p><strong>Patterns:</strong> bearing_wear, thermal_runaway, cavitation, healthy</p></div>
+  <div class="card"><h4>Backend API &mdash; FastAPI / Python 3.11 &mdash; :8000</h4>
+    <p>Core logic: JWT auth, machine management, ML prediction ensemble, alert lifecycle, technician dispatch, work orders, WebSocket broadcast, automation loop (30s), cascade isolation, AI insights.</p></div>
+  <div class="card"><h4>Frontend &mdash; React 18 / Vite / TS &mdash; :5173 / :80</h4>
+    <p>15-page SPA. Dark/light theme, WebSocket real-time updates, staged audio alerts (Web Audio API), browser TTS voice alerts, PDF export via jsPDF, command palette (Cmd+K).</p></div>
+  <div class="card"><h4>PostgreSQL &mdash; Railway Managed</h4>
+    <p>Production DB. Auto-created via SQLAlchemy create_all (IF NOT EXISTS). asyncpg driver for non-blocking I/O. URL auto-converted from postgresql:// to postgresql+asyncpg:// by config helper.</p></div>
+</div>
+<h3 class="sub">Database Schema</h3>
+<table>
+<tr><th>Table</th><th>Key Fields</th></tr>
+<tr><td><code>users</code></td><td>id, email, name, role (admin/operator/viewer), hashed_password</td></tr>
+<tr><td><code>machines</code></td><td>id, name, type, location, status, risk_score, riskLevel, last_seen</td></tr>
+<tr><td><code>sensor_readings</code></td><td>machine_id, temperature_C, vibration_mm_s, rpm, current_A, timestamp</td></tr>
+<tr><td><code>failure_predictions</code></td><td>machine_id, risk_score, hours_to_failure, failure_type, confidence, notified_hours</td></tr>
+<tr><td><code>alerts</code></td><td>machine_id, severity, status, title, message, acknowledged_at, resolved_at</td></tr>
+<tr><td><code>maintenance_records</code></td><td>machine_id, technician_id, status, type, scheduled_at, completed_at</td></tr>
+<tr><td><code>technicians</code></td><td>name, role, skills, status, shift_start, shift_end, current_machine_id</td></tr>
+<tr><td><code>failure_fingerprints</code></td><td>machine_type, label, failure_type, temperature, vibration, current, hours_before_failure</td></tr>
+<tr><td><code>machine_isolations</code></td><td>machine_id, is_isolated, isolation_type, reason, risk_at_isolation, protected_machines</td></tr>
+</table>
+</div>
+
+<!-- 2 -->
+<div class="page">
+<h2 class="sec">2. End-to-End Workflow</h2>
+<div class="step"><div class="sn">1</div><div><h4 style="font-weight:700;margin-bottom:4px">Sensor Data Generation</h4>
+<p>Node.js simulation server generates readings for CNC_01, CNC_02, PUMP_03, CONVEYOR_04 using a deterministic 7-day degradation model. Reading = base + linear drift (degrade &times; progress) + smoothed noise (averaged over 4 adjacent minute-seeds). No sudden jumps &mdash; consecutive readings share correlated noise.</p></div></div>
+<div class="step"><div class="sn">2</div><div><h4 style="font-weight:700;margin-bottom:4px">Backend Automation Loop (every 30 seconds)</h4>
+<ul>
+<li>Fetch latest sensor reading per machine from /history/{id}?limit=1</li>
+<li>Run 2-step ML verification: anomaly detection (IsoForest + SVM) then supervised (RF + XGBoost)</li>
+<li>Check failure fingerprint DB (19 patterns, normalised Euclidean distance)</li>
+<li>Update machine risk_score and failure predictions in DB</li>
+<li>Check milestone thresholds (72h/48h/24h/12h/6h/1h) &mdash; each fires ONCE only</li>
+<li>Auto-assign best available technician if urgency &ge; high</li>
+<li>Auto-create maintenance work order if none exists</li>
+<li>Broadcast WebSocket events to all connected clients</li>
+<li>Check unacknowledged critical alerts &gt;5 min &rarr; auto-escalate</li>
+<li>Check risk_score &gt;85 &rarr; auto-isolate machine, protect downstream</li>
+</ul></div></div>
+<div class="step"><div class="sn">3</div><div><h4 style="font-weight:700;margin-bottom:4px">Alert Lifecycle</h4>
+<p>Status flow: <strong>active &rarr; acknowledged &rarr; resolved.</strong><br/>
+If not acknowledged in 5 minutes: auto-escalated &rarr; technician dispatched &rarr; work order created &rarr; Email + Slack sent &rarr; WebSocket broadcast &rarr; voice TTS alert.</p></div></div>
+<div class="step"><div class="sn">4</div><div><h4 style="font-weight:700;margin-bottom:4px">Frontend Real-Time Updates</h4>
+<p>Dashboard polls /machines and /alerts every 5s via React Query. 4 WebSocket connections (one per machine) receive push events. On pre_failure_alert: toast + staged audio + voice TTS. On cascade_warning: toast + warning audio. On alert_auto_escalated: red toast + critical audio + voice.</p></div></div>
+<div class="step"><div class="sn">5</div><div><h4 style="font-weight:700;margin-bottom:4px">AI Insights (on demand or auto at phase &ge; 2)</h4>
+<p>Failure phase classification (0&ndash;3), Pearson correlation matrix, ROI calculator, maintenance window optimizer, natural language incident report. Exportable as PDF via jsPDF + html2canvas.</p></div></div>
+<div class="step"><div class="sn">6</div><div><h4 style="font-weight:700;margin-bottom:4px">Cascade Isolation</h4>
+<p>Line: CNC_01 &rarr; CNC_02 &rarr; PUMP_03 &rarr; CONVEYOR_04. Any isolated machine cuts flow to all downstream. WebSocket broadcasts machine_isolated event. Operator can manually isolate/release via Cascade Safety page.</p></div></div>
+</div>
+
+<!-- 3 -->
+<div class="page">
+<h2 class="sec">3. Data Flow Diagram</h2>
+<div class="pre">+--------------------+
+|  Simulation Server |  &lt;-- 7-day epoch-anchored degradation cycles
+|  Node.js :3000     |      4 machines, 4 patterns, smoothed noise
++--------+-----------+
+         |  GET /history/{id}?limit=1  (automation loop, every 30s)
+         |  GET /stream/{id}           (SSE live stream relay)
+         v
++----------------------------------------------------------------+
+|                   FastAPI Backend (:8000)                      |
+|                                                                |
+|  +-----------------+    +-------------------------------+      |
+|  |  Automation     |    |   ML Prediction Engine        |      |
+|  |  Loop (30s)     +---&gt;|   Step 1: IsolationForest     |      |
+|  |                 |    |           One-Class SVM        |      |
+|  |  Risk scoring   |    |   Step 2: RandomForest         |      |
+|  |  Alert create   |    |           XGBoost              |      |
+|  |  Tech dispatch  |    |   Step 3: Fingerprint match    |      |
+|  |  WS broadcast   |    +-------------------------------+      |
+|  |  Auto-isolate   |                                           |
+|  |  5-min escalate |    +-------------------------------+      |
+|  +-----------------+    |   AI Insights Service         |      |
+|                         |   Phase 0-3 classification    |      |
+|  PostgreSQL / SQLite    |   Pearson correlation matrix  |      |
+|  (async SQLAlchemy)     |   ROI calculator              |      |
+|                         |   Maintenance window picker   |      |
+|                         |   Incident report generator   |      |
+|                         +-------------------------------+      |
++-----------------------------+----------------------------------+
+                              |  WebSocket + REST API
+                              v
++----------------------------------------------------------------+
+|                  React Frontend (:5173)                        |
+|  Dashboard | AI Agent | Live Monitor | AI Insights            |
+|  Cascade   | Floor Map | History     | Alerts | Maintenance   |
+|                                                                |
+|  &lt;-- 4 WebSocket connections (one per machine, JWT auth)     |
+|  &lt;-- React Query polling (staleTime=15s, refetch=5s)        |
+|  &lt;-- Staged audio (Web Audio API, 4 severity levels)        |
+|  &lt;-- Voice alerts (SpeechSynthesis, critical only)          |
++----------------------------------------------------------------+</div>
+<h3 class="sub">Key Event Types (WebSocket)</h3>
+<table>
+<tr><th>Event</th><th>When</th><th>Frontend Action</th></tr>
+<tr><td><code>failure_prediction</code></td><td>Every 30s cycle</td><td>Update machine risk card</td></tr>
+<tr><td><code>pre_failure_alert</code></td><td>Milestone threshold (72h/48h/24h/12h/6h/1h)</td><td>Toast + audio + TTS (critical)</td></tr>
+<tr><td><code>technician_assigned</code></td><td>Auto-assignment by loop</td><td>Toast notification</td></tr>
+<tr><td><code>cascade_warning</code></td><td>Risk jump &gt;15 with downstream risk &gt;30</td><td>Toast + warning audio</td></tr>
+<tr><td><code>machine_isolated</code></td><td>Auto or manual isolation</td><td>Cascade page updates</td></tr>
+<tr><td><code>alert_auto_escalated</code></td><td>Critical unacknowledged &gt;5 min</td><td>Red toast + critical audio + TTS</td></tr>
+</table>
+</div>
+
+<!-- 4 -->
+<div class="page">
+<h2 class="sec">4. Machine Learning Algorithms</h2>
+<h3 class="sub">4.1 Two-Step Verification Pipeline</h3>
+<p>A machine is only flagged at-risk when BOTH steps agree, minimising false positives.</p>
+<h4 class="sub2">Step 1 &mdash; Unsupervised Anomaly Detection</h4>
+<ul>
+<li><strong>Isolation Forest</strong> (sklearn): contamination=0.1, n_estimators=100. Flags readings deviating from normal distribution.</li>
+<li><strong>One-Class SVM</strong> (sklearn): kernel='rbf', nu=0.1. Trained on normal data only &mdash; rejects anything outside the learned boundary.</li>
+<li>If EITHER model flags anomaly &rarr; proceed to Step 2.</li>
+</ul>
+<h4 class="sub2">Step 2 &mdash; Supervised Failure Prediction</h4>
+<ul>
+<li><strong>Random Forest Classifier</strong>: 100 trees, max_depth=8. Trained on labelled failure CSV data.</li>
+<li><strong>XGBoost Classifier</strong>: n_estimators=100, max_depth=6, learning_rate=0.1.</li>
+<li><strong>Ensemble:</strong> risk = 0.4 &times; IsoForest_score + 0.3 &times; SVM_score + 0.3 &times; avg(RF, XGB)</li>
+<li>Outputs: risk_score (0-100), hours_to_failure, failure_type, confidence %</li>
+</ul>
+<h4 class="sub2">Step 3 &mdash; Failure Fingerprint Matching (19 patterns)</h4>
+<ul>
+<li>Normalised Euclidean distance: <code>d = sqrt(mean(((current - fp) / fp)^2))</code> across temperature, vibration, current</li>
+<li>Match: d &lt; 0.25 (25% avg deviation). Warning: d &lt; 0.40. Time-proximity bonus: &times;0.85 if hours_remaining within 6h of fingerprint</li>
+<li>Fingerprint types: bearing_wear, thermal_runaway, cavitation, seal_failure, belt_slip, roller_wear</li>
+</ul>
+<h3 class="sub">4.2 Failure Phase Classification</h3>
+<table>
+<tr><th>Phase</th><th>Condition</th><th>RUL Estimate</th><th>Action</th></tr>
+<tr><td><span class="badge bg">0 Normal</span></td><td>All readings within &plusmn;10% of baseline</td><td>&gt;168h</td><td>Monitor only</td></tr>
+<tr><td><span class="badge bb">1 Watch</span></td><td>Temp or vibration 10-25% above baseline</td><td>48-168h</td><td>Schedule inspection</td></tr>
+<tr><td><span class="badge ba">2 Warning</span></td><td>Temp or vibration 25-50% above baseline</td><td>12-48h</td><td>Auto-report alert</td></tr>
+<tr><td><span class="badge br">3 Critical</span></td><td>Any reading &gt;50% above baseline</td><td>&lt;12h</td><td>Immediate intervention</td></tr>
+</table>
+<h3 class="sub">4.3 Pearson Correlation Analysis</h3>
+<p>Computed across (temperature, vibration, current, rpm) pairs. High temp&ndash;vibration r (&gt;0.7) = thermal coupling. Negative rpm&ndash;current = load anomaly. Displayed as colour-coded heatmap.</p>
+<h3 class="sub">4.4 ROI Calculator</h3>
+<table>
+<tr><th>Scenario</th><th>Cost Components</th></tr>
+<tr><td>Reactive (run-to-failure)</td><td>Downtime $500/h + Emergency repair $8,000 + Unplanned parts $3,500</td></tr>
+<tr><td>Predictive maintenance</td><td>Monitoring $1,200 + Planned repair $2,500 + Planned parts $1,800</td></tr>
+<tr><td><strong>Annual savings</strong></td><td>(downtime_h &times; $500 + emergencies &times; $8,000) &minus; planned_cost</td></tr>
+</table>
+</div>
+
+<!-- 5 -->
+<div class="page">
+<h2 class="sec">5. Real-Time Infrastructure</h2>
+<h3 class="sub">5.1 WebSocket Manager</h3>
+<ul>
+<li>Endpoint: <code>GET /ws/{machine_id}?token={jwt}</code></li>
+<li>JWT validated on upgrade. Invalid token &rarr; 403 close immediately.</li>
+<li>ws_manager maintains Set&lt;WebSocket&gt; per machine_id + global broadcast set</li>
+<li>broadcast_all(payload) pushes JSON to every client regardless of machine</li>
+</ul>
+<h3 class="sub">5.2 5-Minute Auto-Escalation</h3>
+<div class="pre">CRITICAL_ACK_TIMEOUT = 300  # seconds
+
+async def _check_unacknowledged(db):
+    cutoff = datetime.utcnow() - timedelta(seconds=300)
+    alerts = await db.execute(
+        select(Alert).where(
+            Alert.severity == 'critical',
+            Alert.status == 'active',
+            Alert.acknowledged_at == None,
+            Alert.created_at &lt; cutoff
+        )
+    )
+    for alert in alerts.scalars():
+        # 1. Find technician: highest skill_score + status='available'
+        # 2. Update alert.assigned_to + create MaintenanceRecord
+        # 3. Broadcast 'alert_auto_escalated' WebSocket event
+        # 4. Send email + Slack notification
+        await notify_pre_failure_alert(machine, prediction)</div>
+<h3 class="sub">5.3 Staged Audio (Web Audio API)</h3>
+<table>
+<tr><th>Severity</th><th>Sound</th><th>Delay</th><th>Spam Gate</th></tr>
+<tr><td>info</td><td>Silent</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>warning</td><td>Single 800 Hz beep (150ms)</td><td>3s</td><td>8s</td></tr>
+<tr><td>error</td><td>Two-tone 600 Hz + 900 Hz</td><td>2s</td><td>8s</td></tr>
+<tr><td>critical</td><td>Awareness tone at 2s, 3-note alarm at 4s</td><td>2s + 4s</td><td>8s</td></tr>
+</table>
+<p>All tones: <code>AudioContext.createOscillator()</code> &mdash; no external files needed. Spam gate: one alarm per severity per 8 seconds.</p>
+<h3 class="sub">5.4 Signal Quality Monitor</h3>
+<ul>
+<li><strong>FLAT_LINE</strong>: spread of last 8 readings &lt; 0.0001 &rarr; sensor frozen warning</li>
+<li><strong>OUT_OF_RANGE</strong>: value &gt; 3 standard deviations from rolling mean &rarr; spike flag</li>
+<li>Logged as warnings; influences ML confidence scoring</li>
+</ul>
+</div>
+
+<!-- 6 -->
+<div class="page">
+<h2 class="sec">6. AI Intelligence Features</h2>
+<div class="grid2">
+<div class="card"><h4>Failure Phase Fingerprinting</h4><p>Classifies each machine into Phase 0-3 based on sensor deviation from known baselines. Estimates Remaining Useful Life (RUL) in hours. Phase &ge;2 automatically posts alert to simulation server feed (visible on AI Agent Dashboard).</p></div>
+<div class="card"><h4>Sensor Correlation Matrix</h4><p>Pearson r between temperature, vibration, current, rpm. Identifies cross-sensor anomalies (e.g., temperature rising while RPM drops = bearing seizure risk). Colour-coded heatmap in AI Insights.</p></div>
+<div class="card"><h4>ROI Calculator</h4><p>Compares reactive vs predictive maintenance costs. Annual savings and ROI%. Uses industry-standard rates: $500/h downtime, $8,000 emergency repair, $3,500 unplanned parts.</p></div>
+<div class="card"><h4>Maintenance Window Optimizer</h4><p>Analyses time-of-day load patterns to suggest 3 optimal windows that minimise production impact. Weights off-peak hours (22:00-06:00) highest.</p></div>
+<div class="card"><h4>AI Incident Report Generator</h4><p>Natural language report: phase summary, correlation findings, RUL estimate, recommended actions, predicted failure type. Exportable as PDF via jsPDF + html2canvas.</p></div>
+<div class="card"><h4>Voice Alert (Browser TTS)</h4><p>Critical alerts trigger <code>SpeechSynthesisUtterance</code> (rate=1.1, pitch=0.9). Example: "Critical alert. CNC Machine 1 predicted to fail in 2 hours." No-ops gracefully if TTS unavailable.</p></div>
+<div class="card"><h4>5-Minute Auto-Escalation</h4><p>If a critical alert is not acknowledged within 5 minutes: autonomous technician dispatch, priority work order creation, Email + Slack notifications, WebSocket broadcast, critical audio + voice alert.</p></div>
+<div class="card"><h4>Automated Sim-Server Reporting</h4><p>When failure phase &ge; 2: backend POSTs structured alert to simulation server /alert endpoint. Visible as AI Agent activity on the Agent Dashboard page in real time.</p></div>
+</div>
+</div>
+
+<!-- 7 -->
+<div class="page">
+<h2 class="sec">7. Cascade Failure Prevention</h2>
+<div class="hl"><strong>Production line:</strong> CNC_01 (Zone A) &rarr; CNC_02 (Zone A) &rarr; PUMP_03 (Zone B) &rarr; CONVEYOR_04 (Zone C)</div>
+<h3 class="sub">Topology Rules</h3>
+<ul>
+<li>CNC_01 isolated &rarr; CNC_02, PUMP_03, CONVEYOR_04 all blocked (full line halted)</li>
+<li>CNC_02 isolated &rarr; PUMP_03, CONVEYOR_04 blocked</li>
+<li>PUMP_03 isolated &rarr; CONVEYOR_04 blocked</li>
+<li>CONVEYOR_04 is terminal &mdash; no downstream dependencies</li>
+</ul>
+<h3 class="sub">Auto-Isolation (risk_score &gt; 85)</h3>
+<ul>
+<li>Automation loop checks risk_score each 30s cycle</li>
+<li>risk_score &gt; 85 &rarr; <code>MachineIsolation</code> record created (isolation_type='auto')</li>
+<li>Machine status set to 'isolated' in DB</li>
+<li>All downstream machines show "Flow Blocked" status in UI</li>
+<li>WebSocket broadcasts <code>machine_isolated</code> event with protectedMachines list</li>
+<li>Alert created: title = "Machine auto-isolated due to critical risk"</li>
+</ul>
+<h3 class="sub">Pre-Isolation Cascade Warning</h3>
+<ul>
+<li>If risk jumps &gt;15 in one cycle AND downstream machine risk &gt;30 &rarr; <code>cascade_warning</code> broadcast</li>
+<li>Frontend shows toast + warning audio before any isolation occurs</li>
+</ul>
+<h3 class="sub">Manual Isolation (Operator)</h3>
+<ul>
+<li><code>POST /api/v1/isolation/isolate</code> &lbrace;machineId, reason&rbrace; &mdash; requires operator role</li>
+<li>Same DB record + WebSocket broadcast as auto-isolation</li>
+<li><code>POST /api/v1/isolation/release</code> to restore machine after repair</li>
+</ul>
+</div>
+
+<!-- 8 -->
+<div class="page">
+<h2 class="sec">8. Alert &amp; Notification System</h2>
+<h3 class="sub">Alert Severity Levels</h3>
+<table>
+<tr><th>Severity</th><th>Risk Threshold</th><th>Audio</th><th>Channels</th></tr>
+<tr><td><span class="badge" style="background:#64748b">info</span></td><td>&lt;40</td><td>Silent</td><td>Toast only</td></tr>
+<tr><td><span class="badge ba">warning</span></td><td>40-60</td><td>Single beep (3s delay)</td><td>Toast + WebSocket</td></tr>
+<tr><td><span class="badge br">error</span></td><td>60-80</td><td>Two-tone (2s delay)</td><td>Toast + Email + WebSocket</td></tr>
+<tr><td><span class="badge br">critical</span></td><td>&gt;80</td><td>3-note alarm + TTS voice</td><td>Toast + Email + Slack + WebSocket</td></tr>
+</table>
+<h3 class="sub">Notification Milestones (each fires ONCE)</h3>
+<table>
+<tr><th>Hours to Failure</th><th>Severity</th><th>Actions Triggered</th></tr>
+<tr><td>72h</td><td>info</td><td>Notification log only</td></tr>
+<tr><td>48h</td><td>warning</td><td>Notification + WebSocket push</td></tr>
+<tr><td>24h</td><td>error</td><td>Notification + technician auto-assigned</td></tr>
+<tr><td>12h</td><td>error</td><td>Notification + maintenance work order created</td></tr>
+<tr><td>6h</td><td>critical</td><td>Notification + Email + Slack</td></tr>
+<tr><td>1h</td><td>critical</td><td>Notification + Email + Slack + voice TTS</td></tr>
+</table>
+<h3 class="sub">Auto-Escalation Flow (5-minute timeout)</h3>
+<ol>
+<li>Trigger: active critical alert, acknowledged_at IS NULL, created &gt; 5 minutes ago</li>
+<li>Find technician: highest skill_score matching failure_type + status='available'</li>
+<li>Update alert.assigned_to; create MaintenanceRecord (status='scheduled', priority='urgent')</li>
+<li>Broadcast <code>alert_auto_escalated</code> WebSocket event to all clients</li>
+<li>Send HTML email notification to all configured recipients (SMTP)</li>
+<li>POST Slack message to SLACK_WEBHOOK_URL with rich attachment</li>
+<li>Frontend: 12s red toast + critical audio cascade + voice "Auto escalated. [Machine]. Dispatched to [Technician]."</li>
+</ol>
+</div>
+
+<!-- 9 -->
+<div class="page">
+<h2 class="sec">9. Frontend Architecture</h2>
+<h3 class="sub">Tech Stack</h3>
+<div style="margin:12px 0"><span class="tag">React 18</span><span class="tag">TypeScript</span><span class="tag">Vite 4</span><span class="tag">React Query v3</span><span class="tag">React Router v6</span><span class="tag">Framer Motion</span><span class="tag">Recharts</span><span class="tag">react-hot-toast</span><span class="tag">jsPDF</span><span class="tag">html2canvas</span><span class="tag">Web Audio API</span><span class="tag">SpeechSynthesis</span></div>
+<h3 class="sub">Pages</h3>
+<table>
+<tr><th>Route</th><th>Page</th><th>Key Feature</th></tr>
+<tr><td>/</td><td>Dashboard</td><td>Overview stats, live sensor charts (5s poll), machine grid, alert panel, failure predictions</td></tr>
+<tr><td>/agent</td><td>AI Agent</td><td>Real-time agent activity feed from simulation server /alerts endpoint</td></tr>
+<tr><td>/insights</td><td>AI Insights</td><td>Phase fingerprinting, correlation matrix, ROI, maintenance windows, PDF export</td></tr>
+<tr><td>/floor-map</td><td>Floor Map</td><td>Visual factory floor with risk indicators and machine status cards</td></tr>
+<tr><td>/cascade</td><td>Cascade Safety</td><td>4-machine flow diagram, isolate/release controls, isolation event log</td></tr>
+<tr><td>/live</td><td>Live Monitor</td><td>Real-time SSE sensor charts, 60-point rolling window</td></tr>
+<tr><td>/history</td><td>History</td><td>Historical sensor trends with date range picker</td></tr>
+<tr><td>/alerts</td><td>Alerts</td><td>Full alert list, acknowledge/resolve, severity filters</td></tr>
+<tr><td>/maintenance</td><td>Maintenance</td><td>Work orders: create, update, assign technician</td></tr>
+<tr><td>/reports</td><td>Reports</td><td>Downloadable maintenance and alert reports</td></tr>
+<tr><td>/settings</td><td>Settings</td><td>Theme toggle, notification preferences, SMTP/Slack config</td></tr>
+</table>
+<h3 class="sub">Runtime API URL Injection</h3>
+<div class="pre"># Frontend Dockerfile CMD (runtime, not build time):
+echo "window.__API_URL__='${API_URL:-}'; window.__WS_URL__='${WS_URL:-}';" \
+  &gt; /usr/share/nginx/html/config.js &amp;&amp; nginx -g 'daemon off;'
+
+// apiClient.ts:
+const BASE = (window as any).__API_URL__
+  || import.meta.env.VITE_API_URL
+  || 'http://localhost:8000/api/v1';</div>
+<p>This means the same Docker image works for both local dev and Railway production &mdash; no rebuild needed when the backend URL changes.</p>
+</div>
+
+<!-- 10 -->
+<div class="page">
+<h2 class="sec">10. Production Issues Fixed</h2>
+<div class="fix cr"><div class="fix-t">ModuleNotFoundError: app.models.isolation <span class="badge br">Critical</span></div>
+<div class="fix-p">Problem: main.py imported isolation router which imported MachineIsolation from a non-existent file. Module was scaffolded in import statements but never created.</div>
+<div class="fix-s">Fix: Created backend/app/models/isolation.py (MachineIsolation SQLAlchemy model with full schema: machine_id, is_isolated, isolation_type, reason, risk_at_isolation, protected_machines). Also created app/services/fingerprint_service.py with match_fingerprints() normalised Euclidean distance function and 19 pre-seeded fingerprint patterns.</div></div>
+
+<div class="fix cr"><div class="fix-t">CORS: credentials + wildcard origin conflict <span class="badge br">Critical</span></div>
+<div class="fix-p">Problem: FastAPI CORSMiddleware raises error when allow_origins=['*'] is combined with allow_credentials=True (CORS spec: wildcard cannot be used with credentials). Railway frontend was being blocked by browser CORS policy.</div>
+<div class="fix-s">Fix: Added _wildcard check in main.py: allow_credentials = not ('*' in origins). When CORS_ORIGINS='["*"]', credentials mode is disabled so browsers accept the wildcard.</div></div>
+
+<div class="fix hi"><div class="fix-t">Auth loading hang &mdash; blank white screen <span class="badge ba">High</span></div>
+<div class="fix-p">Problem: Axios had no timeout configured. If the Railway backend was slow to respond, the /auth/me request hung indefinitely, keeping isLoading=true forever and showing a blank screen.</div>
+<div class="fix-s">Fix: Added timeout: 10000 (10s) to apiClient axios instance. Added 401/403 response interceptor to clear localStorage token and redirect to /login.</div></div>
+
+<div class="fix hi"><div class="fix-t">Railway frontend: API URL hardcoded to localhost:8000 <span class="badge ba">High</span></div>
+<div class="fix-p">Problem: Vite bakes VITE_API_URL at build time inside the Docker image. The Railway frontend always made requests to localhost:8000 instead of the Railway backend URL.</div>
+<div class="fix-s">Fix: Runtime injection &mdash; nginx Dockerfile CMD generates config.js from Railway env vars API_URL and WS_URL before starting nginx. apiClient.ts reads window.__API_URL__ at runtime. Same image works everywhere.</div></div>
+
+<div class="fix hi"><div class="fix-t">Sudden data spikes in sensor charts <span class="badge ba">High</span></div>
+<div class="fix-p">Problem: (1) Live readings used Math.floor(Date.now()/1000) as random seed &mdash; new random value every second caused values to jump independently. (2) Live and history used different 7-day cycle anchors (UNIX epoch mod vs rolling window from now), creating discontinuities when plotted together. (3) CNC_02 thermal anomaly was a hard step change the instant hourOfDay crossed 13.00.</div>
+<div class="fix-s">Fix: (1+2) Both live and history now use same minute-based seed i*37+1 anchored to UNIX epoch cycle start (Date.now() % CYCLE_MS). (3) CNC_02 thermal spike ramps smoothly over 30 minutes via min(rampIn, rampOut) envelope. (4) Noise averaged over 4 adjacent seeds for autocorrelated drift.</div></div>
+
+<div class="fix"><div class="fix-t">uvicorn --reload hangs on background task shutdown</div>
+<div class="fix-p">Problem: start.sh launched uvicorn with --reload. WatchFiles detected changes in agent/config.py (outside backend dir), triggering graceful shutdown. The automation asyncio task was stuck in asyncio.sleep(30) and would not cancel, causing the server to hang indefinitely on "Waiting for background tasks to complete."</div>
+<div class="fix-s">Fix: Removed --reload from start.sh. Background daemons should not auto-reload; --reload is only for interactive development.</div></div>
+
+<div class="fix"><div class="fix-t">36-machine cascade topology vs 4-machine reality</div>
+<div class="fix-p">Problem: Cascade isolation was expanded to M01-M36 (36 machines) but only 4 machines exist in the simulation server and database.</div>
+<div class="fix-s">Fix: Simplified MACHINE_TOPOLOGY to the 4 real machines (CNC_01, CNC_02, PUMP_03, CONVEYOR_04) with correct upstream/downstream relationships. CascadeIsolationPage rebuilt as a clean 4-machine production line flow diagram.</div></div>
+</div>
+
+<!-- 11 -->
+<div class="page">
+<h2 class="sec">11. API Endpoint Reference</h2>
+<p style="font-size:12px;color:#64748b;margin-bottom:14px">All endpoints require <code>Authorization: Bearer &lt;JWT&gt;</code> except /health and POST /api/v1/auth/login</p>
+
+<h3 class="sub">Authentication</h3>
+<div class="api"><span class="mt post">POST</span><span class="ap">/api/v1/auth/login</span><span>Login &rarr; returns accessToken + user object</span></div>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/auth/me</span><span>Current user profile (validates token)</span></div>
+<div class="api"><span class="mt post">POST</span><span class="ap">/api/v1/auth/refresh</span><span>Refresh expired access token</span></div>
+
+<h3 class="sub">Machines &amp; Alerts</h3>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/machines</span><span>List machines (paginated, filter by status)</span></div>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/machines/{id}</span><span>Single machine with latest prediction</span></div>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/alerts</span><span>List alerts (filter: status, severity, machine_id)</span></div>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/alerts/summary</span><span>Count by status and severity</span></div>
+<div class="api"><span class="mt post">POST</span><span class="ap">/api/v1/alerts/{id}/acknowledge</span><span>Acknowledge alert (sets acknowledged_at)</span></div>
+<div class="api"><span class="mt post">POST</span><span class="ap">/api/v1/alerts/{id}/resolve</span><span>Resolve alert</span></div>
+
+<h3 class="sub">Stream, Predictions &amp; Insights</h3>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/stream/{id}/live</span><span>Latest N sensor readings from sim server</span></div>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/stream/{id}/history</span><span>Historical data with optional date range</span></div>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/predictions/{machine_id}</span><span>ML failure prediction for one machine</span></div>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/insights/overview</span><span>Phase + ROI summary for all 4 machines</span></div>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/insights/{id}/analysis</span><span>Full analysis: phase, correlation, ROI, windows, incident report</span></div>
+
+<h3 class="sub">Cascade Isolation, Fingerprints &amp; WebSocket</h3>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/isolation/topology</span><span>Machine dependency graph</span></div>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/isolation/status</span><span>Current isolation status for all machines</span></div>
+<div class="api"><span class="mt post">POST</span><span class="ap">/api/v1/isolation/isolate</span><span>Manually isolate (operator role required)</span></div>
+<div class="api"><span class="mt post">POST</span><span class="ap">/api/v1/isolation/release</span><span>Release from isolation</span></div>
+<div class="api"><span class="mt get">GET</span><span class="ap">/api/v1/isolation/cascade-impact/{id}</span><span>BFS analysis of downstream machines at risk</span></div>
+<div class="api"><span class="mt post">POST</span><span class="ap">/api/v1/fingerprints/compare</span><span>Compare live readings against 19 fingerprints</span></div>
+<div class="api"><span class="mt ws">WS</span><span class="ap">/ws/{machine_id}?token=...</span><span>Real-time sensor + alert event stream (JWT auth)</span></div>
+</div>
+
+<!-- 12 -->
+<div class="page">
+<h2 class="sec">12. Deployment Architecture (Railway)</h2>
+<h3 class="sub">Backend Dockerfile</h3>
+<div class="pre">FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]</div>
+
+<h3 class="sub">Frontend Dockerfile (multi-stage + runtime injection)</h3>
+<div class="pre">FROM node:18-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+COPY . .
+RUN npm run build        # VITE_API_URL baked at build time (localhost fallback)
+
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+EXPOSE 80
+CMD ["/bin/sh", "-c", \
+  "echo \"window.__API_URL__='${API_URL:-}';window.__WS_URL__='${WS_URL:-}';\" \
+   &gt; /usr/share/nginx/html/config.js &amp;&amp; nginx -g 'daemon off;'"]
+# API_URL and WS_URL come from Railway env vars at container start</div>
+
+<h3 class="sub">Railway Environment Variables</h3>
+<table>
+<tr><th>Service</th><th>Variable</th><th>Value</th></tr>
+<tr><td>Backend</td><td>DATABASE_URL</td><td>Auto-injected by Railway Postgres addon</td></tr>
+<tr><td>Backend</td><td>SECRET_KEY</td><td>32+ char random string</td></tr>
+<tr><td>Backend</td><td>CORS_ORIGINS</td><td>["*"] or specific frontend URL</td></tr>
+<tr><td>Backend</td><td>SIMULATION_SERVER_URL</td><td>https://&lt;sim&gt;.up.railway.app</td></tr>
+<tr><td>Frontend</td><td>API_URL</td><td>https://&lt;backend&gt;.up.railway.app/api/v1</td></tr>
+<tr><td>Frontend</td><td>WS_URL</td><td>wss://&lt;backend&gt;.up.railway.app</td></tr>
+</table>
+
+<h3 class="sub">Startup Sequence</h3>
+<ol>
+<li>Railway builds Docker image from Dockerfile on each push to main branch</li>
+<li>Backend starts: init_db() runs SQLAlchemy create_all (safe on existing Postgres tables)</li>
+<li>seed_database() inserts demo data if tables are empty</li>
+<li>ml_service.bootstrap() loads ML models or trains from data/ directory</li>
+<li>asyncio background task starts: run_automation_loop() (30s cycle)</li>
+<li>FastAPI app is healthy: /health returns {"status":"ok"}</li>
+</ol>
+
+<div style="background:linear-gradient(135deg,#1a56db,#1e40af);border-radius:12px;padding:22px 28px;color:#fff;text-align:center;margin-top:28px">
+  <div style="font-size:17px;font-weight:800;margin-bottom:6px">Default Login</div>
+  <div style="font-size:14px;font-family:'Courier New',monospace;opacity:.95">admin@factory.com &nbsp; / &nbsp; Admin@123</div>
+  <div style="font-size:12px;opacity:.6;margin-top:8px">Local: http://localhost:5173 &nbsp;&bull;&nbsp; Docs: http://localhost:8000/docs</div>
+</div>
+</div>
+
+</body>
+</html>
