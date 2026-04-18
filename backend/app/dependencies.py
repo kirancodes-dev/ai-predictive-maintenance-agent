@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,16 +7,19 @@ from app.database import get_db
 from app.models.user import User
 from app.core.security import decode_token
 
-bearer_scheme = HTTPBearer()
+# auto_error=False so we return 401 (not 403) when header is missing
+bearer_scheme = HTTPBearer(auto_error=False)
 
 # Valid roles (ordered by privilege level)
 ROLES = ("viewer", "operator", "technician", "manager", "admin")
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     token = credentials.credentials
     payload = decode_token(token)
     if not payload:

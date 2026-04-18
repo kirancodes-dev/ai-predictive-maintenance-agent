@@ -16,8 +16,15 @@ const LoginPage: React.FC = () => {
     try {
       await login(email, password);
       navigate('/', { replace: true });
-    } catch {
-      toast.error('Invalid email or password');
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || err?.message;
+      if (msg && msg.toLowerCase().includes('invalid credentials')) {
+        toast.error('Invalid email or password');
+      } else if (err?.code === 'ERR_NETWORK' || !err?.response) {
+        toast.error('Cannot connect to server. Check your network.');
+      } else {
+        toast.error(msg || 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

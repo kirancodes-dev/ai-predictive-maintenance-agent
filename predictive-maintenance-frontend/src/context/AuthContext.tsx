@@ -30,13 +30,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return;
     }
+    // Attempt to restore session with the existing token; if it fails,
+    // try refreshing before giving up — prevents logout on page refresh
+    // when the token just expired.
     apiClient
       .get('/auth/me')
       .then((res) => {
         const u = res.data?.data;
         if (u) setUser(u);
       })
-      .catch(() => {
+      .catch(async () => {
+        // Try a silent refresh before clearing
+        try {
+          const { data: refreshData } = await apiClient.post('/auth/refresh', { token });
+          const newToken = refreshData?.data?.accessToken;
+          if (newToken) {
+            localStorage.setItem('access_token', newToken);
+            const meRes = await apiClient.get('/auth/me');
+            const u = meRes.data?.data;
+            if (u) { setUser(u); return; }
+          }
+        } catch { /* refresh also failed */ }
         localStorage.removeItem('access_token');
       })
       .finally(() => setIsLoading(false));

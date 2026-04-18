@@ -38,8 +38,13 @@ apiClient.interceptors.response.use(
   (r) => r,
   async (err) => {
     const originalRequest = err.config;
+    const status = err.response?.status;
+
+    // Handle both 401 and 403 as auth failures
+    const isAuthError = status === 401 || status === 403;
+
     if (
-      err.response?.status === 401 &&
+      isAuthError &&
       !originalRequest._retry &&
       !originalRequest.url?.includes('/auth/refresh') &&
       !originalRequest.url?.includes('/auth/login')
@@ -75,7 +80,10 @@ apiClient.interceptors.response.use(
       }
 
       localStorage.removeItem('access_token');
-      window.location.href = '/login';
+      // Only redirect if we're not already on the login page
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   },

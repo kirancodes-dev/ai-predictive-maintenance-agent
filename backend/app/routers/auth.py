@@ -7,7 +7,7 @@ from typing import Optional
 from datetime import timedelta
 from app.database import get_db
 from app.models.user import User
-from app.core.security import verify_password, create_access_token, hash_password, decode_token
+from app.core.security import verify_password, create_access_token, hash_password, decode_token, decode_token_allow_expired
 from app.config import settings
 from app.dependencies import get_current_user
 
@@ -130,9 +130,10 @@ async def refresh_token(
     body: RefreshRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    payload = decode_token(body.token)
+    # Allow expired tokens so the refresh flow works after token expiry
+    payload = decode_token_allow_expired(body.token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise HTTPException(status_code=401, detail="Invalid token")
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload")

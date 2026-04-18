@@ -27,3 +27,14 @@ def decode_token(token: str) -> Optional[dict]:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
         return None
+
+
+def decode_token_allow_expired(token: str) -> Optional[dict]:
+    """Decode a token even if it has expired — used for refresh flow."""
+    try:
+        return jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM],
+            options={"verify_exp": False},
+        )
+    except JWTError:
+        return None
