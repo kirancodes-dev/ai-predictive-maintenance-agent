@@ -105,8 +105,8 @@ async def _fetch_sim_history(
     If limit is None, all readings in the date range are returned."""
     try:
         params: dict = {
-            "start": from_dt.isoformat(),
-            "end": to_dt.isoformat(),
+            "start": from_dt.isoformat() + "Z",
+            "end": to_dt.isoformat() + "Z",
         }
         if limit is not None:
             params["limit"] = limit
