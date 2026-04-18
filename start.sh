@@ -37,8 +37,6 @@ PYTHONPATH="$WORKSPACE/backend" \
   "$BACKEND_VENV/uvicorn" app.main:app \
     --host 0.0.0.0 \
     --port 8000 \
-    --reload \
-    --reload-dir "$WORKSPACE/backend/app" \
   > "$LOG_DIR/backend.log" 2>&1 &
 BACKEND_PID=$!
 disown $BACKEND_PID
