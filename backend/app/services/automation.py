@@ -39,6 +39,7 @@ logger = logging.getLogger("automation")
 
 POLL_INTERVAL_SECONDS = 30
 RISK_THRESHOLD_FOR_PREDICTION = 20
+CRITICAL_ACK_TIMEOUT_SECONDS = 300  # 5 minutes — then auto-escalate
 
 # Cascading failure: if a machine's risk jumps this much in one cycle,
 # warn neighbouring machines in the same location
@@ -301,6 +302,101 @@ async def _get_user_action_signals(
     }
 
 
+# ── Auto-escalate unacknowledged critical alerts ───────────────────────────
+
+async def _check_unacknowledged_escalations(db: AsyncSession, now: datetime) -> None:
+    """
+    If a critical/error alert has been active and unacknowledged for > 5 minutes,
+    auto-acknowledge it as system-escalated, create a corrective work order,
+    assign the best available technician, and broadcast the event.
+    This removes the human-acknowledgment dependency for critical failures.
+    """
+    from sqlalchemy import and_
+    cutoff = now - timedelta(seconds=CRITICAL_ACK_TIMEOUT_SECONDS)
+
+    result = await db.execute(
+        select(Alert).where(
+            and_(
+                Alert.status == "active",
+                Alert.severity.in_(["critical", "error"]),
+                Alert.acknowledged_at.is_(None),
+                Alert.timestamp < cutoff,
+            )
+        )
+    )
+    stale_alerts = result.scalars().all()
+
+    for alert in stale_alerts:
+        # Mark auto-escalated
+        alert.status = "acknowledged"
+        alert.acknowledged_at = now
+        alert.acknowledged_by = "System — auto-escalated (5 min no-ack)"
+
+        # Load machine for tags
+        machine_result = await db.execute(
+            select(Machine).where(Machine.id == alert.machine_id)
+        )
+        machine = machine_result.scalar_one_or_none()
+        tags = machine.tags or [] if machine else []
+
+        # Find best technician
+        tech = await _find_available_technician(db, tags)
+        assigned_name = tech.name if tech else "On-call duty technician"
+
+        if tech:
+            tech.is_available = False
+            tech.current_assignment_machine_id = alert.machine_id
+            tech.current_assignment_machine_name = alert.machine_name
+            tech.assignment_started_at = now
+            tech.estimated_free_at = now + timedelta(hours=2)
+
+        # Auto work order
+        wo = MaintenanceRecord(
+            machine_id=alert.machine_id,
+            machine_name=alert.machine_name,
+            type="corrective",
+            status="scheduled",
+            title=f"[AUTO-ESCALATED] {alert.title}",
+            description=(
+                f"Auto-escalated after 5 minutes without acknowledgment.\n"
+                f"Assigned to: {assigned_name}\n\n"
+                f"Original alert: {alert.message}"
+            ),
+            scheduled_date=now.strftime("%Y-%m-%d"),
+            assigned_to=assigned_name,
+            estimated_duration=120,
+        )
+        db.add(wo)
+        await db.flush()
+
+        # Report back to simulation server
+        await report_alert_to_sim_server(
+            alert.machine_id,
+            f"AUTO-ESCALATED (5-min no-ack): {alert.title} — assigned to {assigned_name}",
+        )
+
+        # Broadcast WebSocket event
+        await ws_manager.broadcast_all({
+            "type": "alert_auto_escalated",
+            "payload": {
+                "alertId": alert.id,
+                "machineId": alert.machine_id,
+                "machineName": alert.machine_name,
+                "severity": alert.severity,
+                "title": alert.title,
+                "assignedTo": assigned_name,
+                "workOrderId": wo.id,
+                "reason": "No acknowledgment within 5 minutes — auto-dispatched to maintenance",
+                "timestamp": now.isoformat(),
+            },
+        })
+
+        logger.warning(
+            "AUTO-ESCALATED: alert %s for %s → assigned to %s",
+            alert.id, alert.machine_id, assigned_name,
+        )
+
+
 # ── Core automation cycle ───────────────────────────────────────────────────
 
 async def _run_cycle() -> None:
@@ -321,6 +417,9 @@ async def _run_cycle() -> None:
 
         # ── Cascading failure detection ──
         await _check_cascading_failures(db, machines, now)
+
+        # ── Auto-escalate unacknowledged critical alerts after 5 min ──
+        await _check_unacknowledged_escalations(db, now)
 
         await db.commit()
 

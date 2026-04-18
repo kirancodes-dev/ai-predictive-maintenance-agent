@@ -16,6 +16,7 @@ import { useWebSocket } from '../../hooks/useWebSocket';
 import { streamApi } from '../../services/api/streamApi';
 import type { SensorReadingDto } from '../../services/api/streamApi';
 import toast from 'react-hot-toast';
+import { useAlertSound } from '../../hooks/useAlertSound';
 
 const MACHINE_IDS = ['CNC_01', 'CNC_02', 'PUMP_03', 'CONVEYOR_04'];
 
@@ -27,6 +28,7 @@ const DashboardPage: React.FC = () => {
   const { mutate: acknowledge } = useAcknowledgeAlert();
   const { mutate: resolve } = useResolveAlert();
   const [showReportModal, setShowReportModal] = useState(false);
+  const { playAlert } = useAlertSound();
 
   const machines = machinesData?.items ?? [];
   const alerts = alertsData?.items ?? [];
@@ -49,32 +51,60 @@ const DashboardPage: React.FC = () => {
   // WebSocket for real-time alerts and notifications — ALL machines
   const handleWsMessage = React.useCallback((type: string, payload: unknown) => {
     const p = payload as Record<string, unknown>;
+
     if (type === 'pre_failure_alert') {
       const hours = (p.estimatedHoursRemaining as number) ?? 0;
       const label = hours < 1 ? `${Math.round(hours * 60)}min`
         : hours < 24 ? `${Math.round(hours)}h` : `${Math.floor(hours / 24)}d`;
+      const sev = hours <= 6 ? 'critical' : hours <= 24 ? 'error' : 'warning';
+      // Stage 1: visual toast immediately
       toast.error(`⚠️ ${p.machineName}: Failure in ${label} — ${p.failureType}`,
         { duration: 8000, id: `pfa-${p.machineId}` });
+      // Stage 2: sound fires after delay (handled inside playAlert)
+      playAlert(sev as any);
       qc.invalidateQueries('alerts');
       qc.invalidateQueries('alert-summary');
     }
+
     if (type === 'technician_assigned') {
       toast.success(`🔧 ${p.technicianName} dispatched → ${p.machineName}`,
         { duration: 6000, id: `ta-${p.machineId}` });
     }
+
     if (type === 'alert' || type === 'alert_updated') {
-      const sev = p.severity as string;
+      const sev = (p.severity as string) ?? 'info';
       if (type === 'alert') {
-        const toastFn = sev === 'critical' ? toast.error : toast;
+        // Stage 1: visual toast immediately (no sound yet)
+        const toastFn = sev === 'critical' ? toast.error : sev === 'error' ? toast.error : toast;
         toastFn(`🔔 ${p.machineName}: ${p.title}`, {
           duration: sev === 'critical' ? 10000 : 5000,
           id: `alert-${p.id}`,
         });
+        // Stage 2: sound fires after severity-based delay (inside playAlert)
+        playAlert(sev as any);
       }
       qc.invalidateQueries('alerts');
       qc.invalidateQueries('alert-summary');
     }
-  }, [qc]);
+
+    // 5-min auto-escalation: system took over because no human acknowledged
+    if (type === 'alert_auto_escalated') {
+      toast.error(
+        `🚨 AUTO-ESCALATED: ${p.machineName} — no acknowledgment in 5min. Dispatched to ${p.assignedTo}`,
+        { duration: 12000, id: `esc-${p.alertId}` }
+      );
+      playAlert('critical');
+      qc.invalidateQueries('alerts');
+      qc.invalidateQueries('alert-summary');
+      qc.invalidateQueries('maintenance');
+    }
+
+    if (type === 'cascade_warning') {
+      toast(`⚡ Cascade risk: ${p.triggerMachineName} may affect ${p.affectedMachineName}`,
+        { duration: 8000, id: `cas-${p.affectedMachineId}` });
+      playAlert('warning');
+    }
+  }, [qc, playAlert]);
 
   useWebSocket({ path: '/ws/CNC_01', onMessage: handleWsMessage });
   useWebSocket({ path: '/ws/CNC_02', onMessage: handleWsMessage });
