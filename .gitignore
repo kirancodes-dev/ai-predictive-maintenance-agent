@@ -52,6 +52,7 @@ coverage.xml
 cover/
 logs/
 models/
+!backend/app/models/
 
 # Translations
 *.mo
