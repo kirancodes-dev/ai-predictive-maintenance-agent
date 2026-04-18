@@ -180,12 +180,20 @@ TECHNICIANS_DATA = [
 async def seed_database(db: AsyncSession) -> None:
     # ── Purge any machines not in the allowed 4-machine set ────────────────
     # This removes leftover M01-M36 floor machines from older deployments.
+    from app.models.sensor import SensorReading
+    from app.models.prediction import FailurePrediction
+    from app.models.isolation import MachineIsolation
+
     ALLOWED_IDS = {"CNC_01", "CNC_02", "PUMP_03", "CONVEYOR_04"}
     all_machines = await db.execute(select(Machine.id))
     extra_ids = [row[0] for row in all_machines if row[0] not in ALLOWED_IDS]
     if extra_ids:
-        # Delete sensors first (FK constraint), then machines
+        await db.execute(delete(SensorReading).where(not_(SensorReading.machine_id.in_(list(ALLOWED_IDS)))))
         await db.execute(delete(Sensor).where(not_(Sensor.machine_id.in_(list(ALLOWED_IDS)))))
+        await db.execute(delete(Alert).where(not_(Alert.machine_id.in_(list(ALLOWED_IDS)))))
+        await db.execute(delete(MaintenanceRecord).where(not_(MaintenanceRecord.machine_id.in_(list(ALLOWED_IDS)))))
+        await db.execute(delete(FailurePrediction).where(not_(FailurePrediction.machine_id.in_(list(ALLOWED_IDS)))))
+        await db.execute(delete(MachineIsolation).where(not_(MachineIsolation.machine_id.in_(list(ALLOWED_IDS)))))
         await db.execute(delete(Machine).where(not_(Machine.id.in_(list(ALLOWED_IDS)))))
         await db.flush()
         print(f"🧹 Removed {len(extra_ids)} extra machines: {extra_ids}")
