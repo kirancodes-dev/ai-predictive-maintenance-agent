@@ -11,7 +11,7 @@ from typing import Optional
 from app.database import get_db
 from app.models.user import User
 from app.dependencies import get_current_user, require_admin, require_manager
-from app.services.ml_service import ml_service
+from app.services.ml_service import ml_service, DATA_DIR
 
 router = APIRouter(prefix="/ml", tags=["ml"])
 
@@ -38,7 +38,7 @@ async def ml_status(_: User = Depends(get_current_user)):
 @router.post("/train", dependencies=[Depends(require_admin)])
 async def train_model(_: User = Depends(get_current_user)):
     """Train/retrain the ML model from data in the data/ directory."""
-    success = ml_service.train_from_directory(str(ml_service.DATA_DIR))
+    success = ml_service.train_from_directory(str(DATA_DIR))
     if not success:
         raise HTTPException(
             status_code=400,
