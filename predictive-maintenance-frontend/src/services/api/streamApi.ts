@@ -12,6 +12,7 @@ export interface SensorReadingDto {
 
 export interface SensorHistoryDto {
   sensorId: string;
+  type: string;
   data: Array<{ timestamp: string; value: number }>;
 }
 

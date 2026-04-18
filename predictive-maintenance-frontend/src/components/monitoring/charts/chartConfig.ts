@@ -105,13 +105,13 @@ export function buildCombinedLiveData(
 }
 
 export function buildCombinedHistoryData(
-  histories: Array<{ sensorId: string; data: Array<{ timestamp: string; value: number }> }>,
+  histories: Array<{ sensorId: string; type?: string; data: Array<{ timestamp: string; value: number }> }>,
 ): CombinedDataPoint[] {
   if (!histories.length) return [];
   const typeMap = new Map<KnownSensorType, Array<{ timestamp: string; value: number }>>();
   for (const h of histories) {
-    const type = getSensorTypeFromId(h.sensorId);
-    if (type) typeMap.set(type, h.data);
+    const type = (h.type as KnownSensorType) || getSensorTypeFromId(h.sensorId);
+    if (type && KNOWN_SENSOR_TYPES.includes(type)) typeMap.set(type, h.data);
   }
   const maxLen = Math.max(...[...typeMap.values()].map((d) => d.length), 0);
   const result: CombinedDataPoint[] = [];

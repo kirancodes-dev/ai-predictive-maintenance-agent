@@ -6,7 +6,7 @@ import { CombinedChartPanel } from '../charts/CombinedChart';
 import {
   SENSOR_CONFIG, KNOWN_SENSOR_TYPES, type KnownSensorType,
   type SensorChartPoint, type SensorThresholds,
-  getSensorTypeFromId, buildCombinedHistoryData,
+  buildCombinedHistoryData,
 } from '../charts/chartConfig';
 
 interface Preset { label: string; minutes: number; }
@@ -44,7 +44,7 @@ const HistoryView: React.FC<Props> = ({ machineId, machineName }) => {
   const chartDataByType = useMemo<Record<KnownSensorType, SensorChartPoint[]>>(() => {
     const map = {} as Record<KnownSensorType, SensorChartPoint[]>;
     for (const type of KNOWN_SENSOR_TYPES) {
-      const hist = histories?.find((h) => getSensorTypeFromId(h.sensorId) === type);
+      const hist = histories?.find((h) => h.type === type);
       map[type] = hist ? hist.data.map((d) => ({ timestamp: d.timestamp, value: d.value })) : [];
     }
     return map;
@@ -75,8 +75,8 @@ const HistoryView: React.FC<Props> = ({ machineId, machineName }) => {
     if (!histories?.length) return;
     const typeMap = new Map<KnownSensorType, Array<{ timestamp: string; value: number }>>();
     for (const h of histories) {
-      const t = getSensorTypeFromId(h.sensorId);
-      if (t) typeMap.set(t, h.data);
+      const t = h.type as KnownSensorType;
+      if (KNOWN_SENSOR_TYPES.includes(t)) typeMap.set(t, h.data);
     }
     const maxLen = Math.max(...[...typeMap.values()].map((d) => d.length), 0);
     const rows = ['timestamp,temperature_C,vibration_mm_s,rpm,current_A'];
