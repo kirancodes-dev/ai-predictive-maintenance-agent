@@ -87,6 +87,7 @@ const InsightsPage: React.FC = () => {
   const corr  = analysis?.correlation;
   const roi   = analysis?.roi;
   const wins  = analysis?.windows;
+  const tod   = analysis?.time_of_day;
   const report = analysis?.report;
 
   const ov = overview.find(o => o.machine_id === selected);
@@ -101,7 +102,7 @@ const InsightsPage: React.FC = () => {
             AI Intelligence Center
           </h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: '#94a3b8' }}>
-            Failure phase fingerprinting · Sensor correlation · Predictive ROI · Maintenance windows
+            Failure phase fingerprinting · Sensor correlation · Predictive ROI · Shift-aware risk calendar · Maintenance windows
           </p>
         </div>
         <button onClick={() => loadAnalysis(selected)} disabled={loading} style={{
@@ -151,6 +152,11 @@ const InsightsPage: React.FC = () => {
                   {ov?.roi?.detection_value && p.phase >= 1 && (
                     <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 600, marginTop: 2 }}>
                       Saves {ov.roi.detection_value}
+                    </div>
+                  )}
+                  {ov?.time_of_day?.now_in_risk_window && (
+                    <div style={{ fontSize: 10, color: '#dc2626', fontWeight: 700, marginTop: 3 }}>
+                      🔴 In peak risk window now
                     </div>
                   )}
                   <PhaseBar phase={p.phase} pct={p.pct_to_fault} />
@@ -276,6 +282,44 @@ const InsightsPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Time-of-Day Risk Window Banner */}
+          {tod?.available && (
+            <div style={{
+              borderRadius: 14,
+              border: `2px solid ${tod.now_in_risk_window ? '#ef4444' : tod.now_in_safe_window ? '#22c55e' : '#f59e0b'}`,
+              padding: '18px 24px',
+              background: tod.now_in_risk_window ? '#fef2f2' : tod.now_in_safe_window ? '#f0fdf4' : '#fffbeb',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                    Shift-Aware Risk Calendar
+                  </div>
+                  <div style={{
+                    fontSize: 15, fontWeight: 800,
+                    color: tod.now_in_risk_window ? '#dc2626' : tod.now_in_safe_window ? '#16a34a' : '#b45309',
+                    marginBottom: 6,
+                  }}>
+                    {tod.now_in_risk_window ? '🔴 ACTIVE RISK WINDOW' : tod.now_in_safe_window ? '🟢 SAFE MAINTENANCE WINDOW NOW' : `⚡ Next risk window in ${tod.hours_to_next_risk}h`}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{tod.alert}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ borderRadius: 10, background: '#fee2e2', padding: '10px 16px', minWidth: 140 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', marginBottom: 2 }}>Peak Risk Window</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#991b1b' }}>{tod.peak_risk_window}</div>
+                    <div style={{ fontSize: 11, color: '#b91c1c', marginTop: 4, lineHeight: 1.4 }}>{tod.peak_risk_reason}</div>
+                  </div>
+                  <div style={{ borderRadius: 10, background: '#dcfce7', padding: '10px 16px', minWidth: 140 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', marginBottom: 2 }}>Safest Maintenance Slot</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>{tod.safe_window}</div>
+                    <div style={{ fontSize: 11, color: '#166534', marginTop: 4, lineHeight: 1.4 }}>{tod.safe_window_reason}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Row 2: Correlation Heatmap + Maintenance Windows */}
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }}>

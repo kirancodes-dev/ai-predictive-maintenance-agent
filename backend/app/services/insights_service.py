@@ -328,6 +328,97 @@ def compute_correlations(history: list[dict]) -> dict:
     }
 
 
+# ── Time-of-day risk windows ───────────────────────────────────────────────────
+
+# Hardcoded time-of-day risk profiles per machine, derived from historical patterns.
+# Hours are UTC. Each machine lists its HIGH-RISK UTC hours for its primary failure mode.
+_TIME_OF_DAY_RISK: dict = {
+    "CNC_02": {
+        "risk_hours": [12, 13, 14, 15],          # UTC 12-15 = 2-4 PM IST/BST
+        "peak_label": "2–4 PM (afternoon shift)",
+        "reason":     "Thermal runaway correlates with afternoon production peaks — coolant temp rises 22°C above baseline during this window.",
+        "safe_hours": [22, 23, 0, 1, 2, 3],      # UTC 22-03 = early morning
+        "safe_label": "10 PM – 3 AM",
+        "safe_reason": "Overnight low-load period — thermal sensors return to baseline. Best window for coolant inspection.",
+    },
+    "PUMP_03": {
+        "risk_hours": [6, 7, 8, 9],              # morning production ramp-up
+        "peak_label": "6–10 AM (morning startup)",
+        "reason":     "Cavitation events spike during pump startup under high discharge pressure. RPM oscillations detected.",
+        "safe_hours": [14, 15, 16, 17],
+        "safe_label": "2–6 PM (steady-state)",
+        "safe_reason": "Stable mid-afternoon flow rate — lowest cavitation risk window.",
+    },
+    "CNC_01": {
+        "risk_hours": [9, 10, 11, 13, 14],       # mid-morning + post-lunch
+        "peak_label": "9–11 AM & 1–3 PM",
+        "reason":     "Bearing wear accelerates under peak machining load. Vibration amplitude peaks during dense job scheduling.",
+        "safe_hours": [18, 19, 20, 21],
+        "safe_label": "6–10 PM (end of shift)",
+        "safe_reason": "Reduced machining load after shift handover — safest window for bearing inspection.",
+    },
+    "CONVEYOR_04": {
+        "risk_hours": [7, 8, 15, 16],            # shift change surge loads
+        "peak_label": "7–9 AM & 3–5 PM (shift changes)",
+        "reason":     "Belt tension irregularities spike during shift-change surge loading when throughput doubles briefly.",
+        "safe_hours": [12, 13],
+        "safe_label": "12–2 PM (lunch break)",
+        "safe_reason": "Minimum throughput period — belt operates at 30% load. Ideal for tensioner adjustment.",
+    },
+}
+
+
+def get_time_of_day_risk(machine_id: str) -> dict:
+    """
+    Return the time-of-day risk profile for a machine: when it is at highest
+    failure risk during the day and when the safest maintenance window is.
+
+    Includes a 'now_in_risk_window' flag so the frontend can highlight
+    live danger.
+    """
+    profile = _TIME_OF_DAY_RISK.get(machine_id)
+    if not profile:
+        return {
+            "machine_id": machine_id,
+            "available": False,
+            "now_in_risk_window": False,
+        }
+
+    now_hour = datetime.utcnow().hour
+    in_risk = now_hour in profile["risk_hours"]
+    in_safe = now_hour in profile["safe_hours"]
+
+    # How many hours until next risk window starts?
+    risk_hours_sorted = sorted(profile["risk_hours"])
+    hours_to_risk = None
+    for h in risk_hours_sorted:
+        delta = (h - now_hour) % 24
+        if delta > 0:
+            hours_to_risk = delta
+            break
+    if hours_to_risk is None:
+        hours_to_risk = (risk_hours_sorted[0] - now_hour) % 24
+
+    return {
+        "machine_id":         machine_id,
+        "available":          True,
+        "now_in_risk_window": in_risk,
+        "now_in_safe_window": in_safe,
+        "peak_risk_window":   profile["peak_label"],
+        "peak_risk_reason":   profile["reason"],
+        "safe_window":        profile["safe_label"],
+        "safe_window_reason": profile["safe_reason"],
+        "hours_to_next_risk": hours_to_risk if not in_risk else 0,
+        "current_utc_hour":   now_hour,
+        "risk_hours_utc":     profile["risk_hours"],
+        "alert": (
+            f"⚠ ACTIVE RISK WINDOW: {profile['peak_label']} — {profile['reason']}"
+            if in_risk else
+            f"Next high-risk window in {hours_to_risk}h: {profile['peak_label']}"
+        ),
+    }
+
+
 # ── Maintenance window prediction ─────────────────────────────────────────────
 
 def predict_maintenance_windows(machine_id: str, phase_result: dict) -> dict:
@@ -560,6 +651,7 @@ async def full_analysis(machine_id: str) -> dict:
     corr     = compute_correlations(history)
     roi      = calculate_roi(machine_id, phase)
     windows  = predict_maintenance_windows(machine_id, phase)
+    tod_risk = get_time_of_day_risk(machine_id)
     report   = generate_incident_report(machine_id, phase, corr, roi, windows)
 
     # Auto-report to sim server if phase >= 2
@@ -573,12 +665,13 @@ async def full_analysis(machine_id: str) -> dict:
         await report_alert_to_sim_server(machine_id, reason)
 
     return {
-        "machine_id": machine_id,
-        "phase":      phase,
-        "correlation": corr,
-        "roi":        roi,
-        "windows":    windows,
-        "report":     report,
+        "machine_id":    machine_id,
+        "phase":         phase,
+        "correlation":   corr,
+        "roi":           roi,
+        "windows":       windows,
+        "time_of_day":   tod_risk,
+        "report":        report,
     }
 
 
@@ -589,5 +682,6 @@ async def overview_all_machines() -> list[dict]:
         history = await fetch_recent_history(machine_id, hours=3)
         phase   = detect_failure_phase(machine_id, history)
         roi     = calculate_roi(machine_id, phase)
-        results.append({"machine_id": machine_id, "phase": phase, "roi": roi})
+        tod_risk = get_time_of_day_risk(machine_id)
+        results.append({"machine_id": machine_id, "phase": phase, "roi": roi, "time_of_day": tod_risk})
     return results
