@@ -7,6 +7,7 @@ import FailurePredictionPanel from '../../components/dashboard/FailurePrediction
 import TechnicianAvailability from '../../components/dashboard/TechnicianAvailability';
 import LiveSensorCharts from '../../components/dashboard/LiveSensorCharts';
 import ReportAlertModal from '../../components/dashboard/ReportAlertModal';
+import SystemOverviewPie from '../../components/dashboard/SystemOverviewPie';
 import { useMachineData } from '../../hooks/useMachineData';
 import { useAlerts, useAlertSummary, useAcknowledgeAlert, useResolveAlert } from '../../hooks/useAlerts';
 import { useWebSocket } from '../../hooks/useWebSocket';
@@ -186,7 +187,10 @@ const DashboardPage: React.FC = () => {
           </h2>
           <MachineGrid machines={machines} isLoading={machinesLoading} liveData={liveData} />
         </div>
-        <AlertPanel alerts={alerts} onAcknowledge={acknowledge} onResolve={resolve} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <SystemOverviewPie machines={machines} />
+          <AlertPanel alerts={alerts} onAcknowledge={acknowledge} onResolve={resolve} />
+        </div>
       </div>
 
       <TechnicianAvailability />

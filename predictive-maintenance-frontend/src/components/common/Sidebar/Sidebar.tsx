@@ -4,6 +4,7 @@ import './Sidebar.css';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '📊' },
+  { to: '/agent', label: 'AI Agent', icon: '🤖' },
   { to: '/live', label: 'Live Monitor', icon: '📡' },
   { to: '/history', label: 'History', icon: '📈' },
   { to: '/maintenance', label: 'Maintenance', icon: '🔧' },

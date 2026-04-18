@@ -209,16 +209,34 @@ app.get('/stream/:machineId', (req, res) => {
   req.on('close', () => clearInterval(timer));
 });
 
+// In-memory stores for agent activity (visible on frontend Agent Dashboard)
+const alertStore = [];
+const maintenanceStore = [];
+
 // Alert receiver
 app.post('/alert', (req, res) => {
+  const entry = { ...req.body, timestamp: new Date().toISOString(), id: alertStore.length + 1 };
+  alertStore.push(entry);
   console.log('[ALERT]', req.body);
   res.json({ success: true });
 });
 
+// Retrieve all alerts (used by frontend Agent Dashboard)
+app.get('/alerts', (_req, res) => {
+  res.json(alertStore);
+});
+
 // Maintenance schedule receiver
 app.post('/schedule-maintenance', (req, res) => {
+  const entry = { ...req.body, timestamp: new Date().toISOString(), id: maintenanceStore.length + 1 };
+  maintenanceStore.push(entry);
   console.log('[MAINTENANCE]', req.body);
   res.json({ success: true });
+});
+
+// Retrieve all scheduled maintenance (used by frontend Agent Dashboard)
+app.get('/maintenance-schedule', (_req, res) => {
+  res.json(maintenanceStore);
 });
 
 // Root

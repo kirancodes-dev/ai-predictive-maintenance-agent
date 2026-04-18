@@ -6,15 +6,18 @@ import { AuthProvider, useAuthContext } from '../context/AuthContext';
 import Header from '../components/common/Header';
 import Sidebar from '../components/common/Sidebar';
 
-const DashboardPage   = lazy(() => import('../pages/DashboardPage'));
-const AlertsPage      = lazy(() => import('../pages/AlertsPage'));
-const MaintenancePage = lazy(() => import('../pages/MaintenancePage'));
-const MonitoringPage  = lazy(() => import('../pages/MonitoringPage'));
-const SettingsPage    = lazy(() => import('../pages/SettingsPage'));
-const MachineDetailPage = lazy(() => import('../pages/MachineDetailPage'));
-const ReportsPage     = lazy(() => import('../pages/ReportsPage'));
-const LoginPage       = lazy(() => import('../pages/LoginPage'));
-const NotFoundPage    = lazy(() => import('../pages/NotFoundPage'));
+const DashboardPage       = lazy(() => import('../pages/DashboardPage'));
+const AlertsPage          = lazy(() => import('../pages/AlertsPage'));
+const MaintenancePage     = lazy(() => import('../pages/MaintenancePage'));
+const MonitoringPage      = lazy(() => import('../pages/MonitoringPage'));
+const SettingsPage        = lazy(() => import('../pages/SettingsPage'));
+const MachineDetailPage   = lazy(() => import('../pages/MachineDetailPage'));
+const ReportsPage         = lazy(() => import('../pages/ReportsPage'));
+const LoginPage           = lazy(() => import('../pages/LoginPage'));
+const NotFoundPage        = lazy(() => import('../pages/NotFoundPage'));
+const AgentDashboardPage  = lazy(() => import('../pages/AgentDashboardPage'));
+const LiveMonitoringPage  = lazy(() => import('../pages/LiveMonitoringPage'));
+const HistoryPage         = lazy(() => import('../pages/HistoryPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 15_000, retry: 1 } },
@@ -60,7 +63,10 @@ const ProtectedLayout: React.FC = () => {
           }>
             <Routes>
               <Route path="/"            element={<DashboardPage />} />
+              <Route path="/agent"       element={<AgentDashboardPage />} />
               <Route path="/machines/:id" element={<MachineDetailPage />} />
+              <Route path="/live"         element={<LiveMonitoringPage />} />
+              <Route path="/history"      element={<HistoryPage />} />
               <Route path="/monitoring"  element={<MonitoringPage />} />
               <Route path="/alerts"      element={<AlertsPage />} />
               <Route path="/maintenance" element={<MaintenancePage />} />

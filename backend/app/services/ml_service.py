@@ -3,9 +3,11 @@ ML Service — multi-algorithm failure prediction ensemble.
 
 Algorithms:
   - Isolation Forest (anomaly detection)
-  - One-Class SVM (novelty detection)
-  - Random Forest (classification)
-  - XGBoost (classification, optional)
+  - XGBoost / Gradient Boosting (primary classification — gradient boosted trees)
+  - Random Forest (secondary classification — ensemble trees)
+
+Note: Uses sklearn HistGradientBoostingClassifier as the XGBoost-equivalent
+(same gradient boosted decision tree algorithm) when xgboost library is unavailable.
 
 Responsibilities:
   - Train models from CSV/Parquet sensor data
@@ -35,9 +37,8 @@ MAX_RUL_HOURS = 240.0
 # Ensemble weights per algorithm
 ALGO_WEIGHTS = {
     "isolation_forest": 0.20,
-    "svm": 0.20,
+    "xgboost": 0.50,
     "random_forest": 0.30,
-    "xgboost": 0.30,
 }
 
 
@@ -102,8 +103,28 @@ class MLService:
             return False
 
         from sklearn.preprocessing import StandardScaler
-        from sklearn.ensemble import IsolationForest, RandomForestClassifier
-        from sklearn.svm import OneClassSVM
+        from sklearn.ensemble import IsolationForest, RandomForestClassifier, HistGradientBoostingClassifier
+
+        # Try native XGBoost first; fall back to sklearn's equivalent algorithm
+        try:
+            from xgboost import XGBClassifier as _XGBClassifier
+            _xgb_cls = _XGBClassifier
+            _xgb_kwargs = dict(
+                n_estimators=200, max_depth=4, learning_rate=0.05,
+                subsample=0.8, colsample_bytree=0.8,
+                objective="binary:logistic", eval_metric="logloss",
+                use_label_encoder=False, random_state=42,
+            )
+            _xgb_label = "XGBoost (native)"
+        except Exception:
+            # HistGradientBoostingClassifier implements the same gradient boosted
+            # decision tree algorithm — identical in approach to XGBoost
+            _xgb_cls = HistGradientBoostingClassifier
+            _xgb_kwargs = dict(
+                max_iter=200, max_depth=4, learning_rate=0.05,
+                min_samples_leaf=20, random_state=42,
+            )
+            _xgb_label = "XGBoost/GradientBoosting (sklearn)"
 
         x = data[FEATURE_COLUMNS].copy()
         y = data["failure_next_24h"].astype(int)
@@ -115,7 +136,7 @@ class MLService:
             logger.warning("Not enough training samples: %d", len(x))
             return False
 
-        # Scale features for SVM and Isolation Forest
+        # Scale features
         scaler = StandardScaler()
         x_scaled = scaler.fit_transform(x)
 
@@ -135,19 +156,17 @@ class MLService:
         except Exception as exc:
             logger.warning("Isolation Forest failed: %s", exc)
 
-        # 2. One-Class SVM — novelty detection on normal samples
+        # 2. XGBoost / Gradient Boosting — primary supervised classification
         try:
-            normal_mask = y == 0
-            if normal_mask.sum() >= 5:
-                svm = OneClassSVM(kernel="rbf", gamma="scale", nu=0.1)
-                svm.fit(x_scaled[normal_mask])
-                models["svm"] = svm
-                active.append("svm")
-                logger.info("✅ One-Class SVM trained on %d normal samples", normal_mask.sum())
+            xgb = _xgb_cls(**_xgb_kwargs)
+            xgb.fit(x_scaled, y)
+            models["xgboost"] = xgb
+            active.append("xgboost")
+            logger.info("✅ %s trained", _xgb_label)
         except Exception as exc:
-            logger.warning("SVM failed: %s", exc)
+            logger.warning("XGBoost/GradientBoosting failed: %s", exc)
 
-        # 3. Random Forest — supervised classification
+        # 3. Random Forest — secondary supervised classification
         try:
             rf = RandomForestClassifier(
                 n_estimators=100, max_depth=5,
@@ -159,21 +178,6 @@ class MLService:
             logger.info("✅ Random Forest trained")
         except Exception as exc:
             logger.warning("Random Forest failed: %s", exc)
-
-        # 4. XGBoost — optional supervised classification
-        try:
-            from xgboost import XGBClassifier
-            xgb = XGBClassifier(
-                n_estimators=50, max_depth=3, learning_rate=0.1,
-                objective="binary:logistic", eval_metric="logloss",
-                use_label_encoder=False,
-            )
-            xgb.fit(x_scaled, y)
-            models["xgboost"] = xgb
-            active.append("xgboost")
-            logger.info("✅ XGBoost trained")
-        except Exception as exc:
-            logger.warning("XGBoost skipped: %s", exc)
 
         if not active:
             logger.error("No algorithms trained successfully")
@@ -228,30 +232,21 @@ class MLService:
             weighted_sum += prob_iso * ALGO_WEIGHTS["isolation_forest"]
             weight_total += ALGO_WEIGHTS["isolation_forest"]
 
-        # One-Class SVM: novelty score → probability
-        if "svm" in self.models:
-            svm = self.models["svm"]
-            raw = svm.decision_function(x_scaled)[0]
-            prob_svm = max(0.0, min(1.0, 0.5 - raw * 0.3))
-            scores["svm"] = round(prob_svm, 4)
-            weighted_sum += prob_svm * ALGO_WEIGHTS["svm"]
-            weight_total += ALGO_WEIGHTS["svm"]
-
-        # Random Forest: classification probability
-        if "random_forest" in self.models:
-            rf = self.models["random_forest"]
-            prob_rf = float(rf.predict_proba(x_scaled)[:, 1][0])
-            scores["random_forest"] = round(prob_rf, 4)
-            weighted_sum += prob_rf * ALGO_WEIGHTS["random_forest"]
-            weight_total += ALGO_WEIGHTS["random_forest"]
-
-        # XGBoost: classification probability
+        # XGBoost: primary classification probability
         if "xgboost" in self.models:
             xgb = self.models["xgboost"]
             prob_xgb = float(xgb.predict_proba(x_scaled)[:, 1][0])
             scores["xgboost"] = round(prob_xgb, 4)
             weighted_sum += prob_xgb * ALGO_WEIGHTS["xgboost"]
             weight_total += ALGO_WEIGHTS["xgboost"]
+
+        # Random Forest: secondary classification probability
+        if "random_forest" in self.models:
+            rf = self.models["random_forest"]
+            prob_rf = float(rf.predict_proba(x_scaled)[:, 1][0])
+            scores["random_forest"] = round(prob_rf, 4)
+            weighted_sum += prob_rf * ALGO_WEIGHTS["random_forest"]
+            weight_total += ALGO_WEIGHTS["random_forest"]
 
         prob = weighted_sum / weight_total if weight_total > 0 else 0.0
         rul = max(0.0, (1.0 - prob) * MAX_RUL_HOURS)
@@ -266,7 +261,28 @@ class MLService:
             "model_ready": True,
             "algorithm_scores": scores,
             "active_algorithms": self.active_algorithms,
+            "verified": self._two_step_verify(scores),
         }
+
+    def _two_step_verify(self, scores: Dict[str, float], threshold: float = 0.5) -> bool:
+        """
+        Two-step verification: an alert is only considered 'verified' when
+        at least 2 independent algorithms agree the failure probability
+        exceeds the threshold. This multi-layer reduction prevents
+        single-algorithm false positives from triggering real alerts.
+        """
+        if len(scores) < 2:
+            # Only one model — can't cross-verify, trust it
+            return any(s >= threshold for s in scores.values())
+
+        agreeing = sum(1 for s in scores.values() if s >= threshold)
+        verified = agreeing >= 2
+        if not verified and any(s >= threshold for s in scores.values()):
+            logger.info(
+                "Two-step verification REJECTED — only %d/%d algorithms agree (scores=%s)",
+                agreeing, len(scores), scores,
+            )
+        return verified
 
     def _compute_drift(self, features: dict) -> float:
         """Compute how far current readings are from training distribution."""

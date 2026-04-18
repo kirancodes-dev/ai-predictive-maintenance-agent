@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import type { Machine } from '../../../types/machine.types';
 import { SENSOR_CONFIG, KNOWN_SENSOR_TYPES, type KnownSensorType } from '../../monitoring/charts/chartConfig';
@@ -12,6 +12,44 @@ const RISK_COLORS: Record<string, string> = {
   low: '#22c55e', medium: '#f59e0b', high: '#f97316', critical: '#ef4444',
 };
 
+/**
+ * Alert escalation tiers:
+ *   0 = normal
+ *   1 = warning (flashing amber border, no sound)
+ *   2 = high risk (orange glow + siren button)
+ *   3 = critical (red pulsing alarm + siren button)
+ */
+function getAlertTier(m: Machine, hasAnomaly: boolean): 0 | 1 | 2 | 3 {
+  if (m.status === 'critical' || m.riskLevel === 'critical') return 3;
+  if (m.riskLevel === 'high' || (m.status === 'warning' && hasAnomaly)) return 2;
+  if (m.status === 'warning' || m.riskLevel === 'medium') return 1;
+  return 0;
+}
+
+const TIER_STYLES: Record<number, React.CSSProperties> = {
+  0: {},
+  1: {
+    animation: 'alert-flash-amber 2s ease-in-out infinite',
+    borderColor: '#f59e0b',
+  },
+  2: {
+    animation: 'alert-glow-orange 1.5s ease-in-out infinite',
+    borderColor: '#f97316',
+    boxShadow: '0 0 12px rgba(249,115,22,0.35)',
+  },
+  3: {
+    animation: 'alert-pulse-red 1s ease-in-out infinite',
+    borderColor: '#ef4444',
+    boxShadow: '0 0 18px rgba(239,68,68,0.45)',
+  },
+};
+
+const TIER_LABELS: Record<number, { text: string; color: string; bg: string }> = {
+  1: { text: '⚡ Level 1 — Warning', color: '#92400e', bg: '#fef3c7' },
+  2: { text: '🔶 Level 2 — High Risk', color: '#9a3412', bg: '#ffedd5' },
+  3: { text: '🚨 Level 3 — CRITICAL ALARM', color: '#991b1b', bg: '#fee2e2' },
+};
+
 interface Props {
   machines: Machine[];
   isLoading: boolean;
@@ -19,6 +57,36 @@ interface Props {
 }
 
 const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) => {
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const sirenRef = useRef<OscillatorNode | null>(null);
+
+  // Siren toggle — plays a pulsing tone via Web Audio API
+  const toggleSiren = useCallback(() => {
+    if (sirenRef.current) {
+      sirenRef.current.stop();
+      sirenRef.current = null;
+      return;
+    }
+    const ctx = audioCtxRef.current ?? new AudioContext();
+    audioCtxRef.current = ctx;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+    // Sweep 440→880→440 every 0.8s
+    const now = ctx.currentTime;
+    for (let i = 0; i < 20; i++) {
+      osc.frequency.linearRampToValueAtTime(880, now + i * 0.8 + 0.4);
+      osc.frequency.linearRampToValueAtTime(440, now + i * 0.8 + 0.8);
+    }
+    gain.gain.value = 0.15;
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(now + 16);
+    sirenRef.current = osc;
+    osc.onended = () => { sirenRef.current = null; };
+  }, []);
+
   if (isLoading) return <p style={{ color: '#94a3b8', fontSize: 13 }}>Loading machines…</p>;
   if (!machines.length) return <p style={{ color: '#94a3b8', fontSize: 13 }}>No machines found.</p>;
 
@@ -33,25 +101,51 @@ const MachineGrid: React.FC<Props> = ({ machines, isLoading, liveData = {} }) =>
           }
         }
         const hasAnomaly = live.some((r) => r.isAnomaly);
+        const tier = getAlertTier(m, hasAnomaly);
+        const tierStyle = TIER_STYLES[tier] ?? {};
+        const tierLabel = tier > 0 ? TIER_LABELS[tier] : null;
 
         return (
           <div key={m.id} style={{
             background: 'var(--color-surface, #fff)', borderRadius: 14, padding: '1rem 1.25rem',
-            border: `1.5px solid ${hasAnomaly ? '#fca5a5' : STATUS_COLORS[m.status] ?? 'var(--color-border, #e2e8f0)'}`,
-            boxShadow: hasAnomaly
+            border: `1.5px solid ${tierStyle.borderColor ?? (hasAnomaly ? '#fca5a5' : STATUS_COLORS[m.status] ?? 'var(--color-border, #e2e8f0)')}`,
+            boxShadow: tierStyle.boxShadow ?? (hasAnomaly
               ? '0 0 0 2px #fee2e233, 0 2px 8px var(--color-card-shadow, rgba(0,0,0,0.06))'
-              : '0 1px 4px var(--color-card-shadow, rgba(0,0,0,0.06))',
+              : '0 1px 4px var(--color-card-shadow, rgba(0,0,0,0.06))'),
             transition: 'all 0.2s ease',
+            animation: tierStyle.animation as string | undefined,
+            position: 'relative',
           }}
             onMouseOver={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px var(--color-card-shadow, rgba(0,0,0,0.1))';
             }}
             onMouseOut={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 1px 4px var(--color-card-shadow, rgba(0,0,0,0.06))';
             }}
           >
+            {/* Tier escalation badge */}
+            {tierLabel && (
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                marginBottom: 8, padding: '4px 8px', borderRadius: 6,
+                background: tierLabel.bg, fontSize: 11, fontWeight: 700, color: tierLabel.color,
+              }}>
+                <span>{tierLabel.text}</span>
+                {tier >= 2 && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSiren(); }}
+                    style={{
+                      background: 'none', border: '1px solid ' + tierLabel.color,
+                      borderRadius: 4, padding: '1px 6px', fontSize: 10,
+                      cursor: 'pointer', color: tierLabel.color, fontWeight: 700,
+                    }}
+                    title="Toggle siren sound"
+                  >
+                    🔊 Siren
+                  </button>
+                )}
+              </div>
+            )}
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
               <div>

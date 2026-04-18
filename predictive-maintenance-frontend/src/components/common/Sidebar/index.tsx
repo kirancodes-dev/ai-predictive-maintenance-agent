@@ -8,6 +8,11 @@ const icons = {
       <rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" />
     </svg>
   ),
+  agent: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="12" cy="5" r="4" /><line x1="8" y1="16" x2="8" y2="16.01" /><line x1="16" y1="16" x2="16" y2="16.01" /><path d="M9 20v1M15 20v1" />
+    </svg>
+  ),
   monitoring: (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
@@ -37,6 +42,7 @@ const icons = {
 
 const NAV = [
   { to: '/',            icon: icons.dashboard,   label: 'Dashboard',   end: true },
+  { to: '/agent',       icon: icons.agent,       label: 'AI Agent',    end: false },
   { to: '/monitoring',  icon: icons.monitoring,  label: 'Monitoring',  end: false },
   { to: '/alerts',      icon: icons.alerts,      label: 'Alerts',      end: false },
   { to: '/maintenance', icon: icons.maintenance, label: 'Maintenance', end: false },

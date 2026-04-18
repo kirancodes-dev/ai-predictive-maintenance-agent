@@ -29,6 +29,7 @@ from app.models.prediction import FailurePrediction
 from app.models.maintenance import MaintenanceRecord
 from app.models.alert import Alert
 from app.services.prediction_engine import compute_prediction
+from app.services.ml_service import ml_service
 from app.services.signal_quality import signal_quality
 from app.core.websocket_manager import ws_manager
 from app.services.notification_service import notify_pre_failure_alert, notify_technician_assigned
@@ -64,7 +65,10 @@ async def _find_available_technician(
       1. Skilled for this machine type (tag match)
       2. Currently on shift (UTC hour within shift window)
       3. Not busy (is_available == True)
-    Falls back to any available technician if no skill match.
+
+    If no on-shift technician is available, automatically picks the
+    off-shift technician whose next shift starts soonest ("first to arrive")
+    so maintenance is pre-allocated for the next shift.
     """
     now_hour = datetime.utcnow().hour
     result = await db.execute(
@@ -75,24 +79,44 @@ async def _find_available_technician(
     )
     available = result.scalars().all()
 
-    # Filter to on-shift technicians
-    on_shift = [
-        t for t in available
-        if _is_on_shift(t, now_hour)
-    ]
-    candidates = on_shift if on_shift else available  # fallback: off-shift but available
-
-    if not candidates:
+    if not available:
         return None
 
-    # Prefer skill match
+    # Filter to on-shift technicians
+    on_shift = [t for t in available if _is_on_shift(t, now_hour)]
+
+    if on_shift:
+        # Prefer skill match among on-shift
+        machine_tag_set = set(machine_tags or [])
+        for tech in on_shift:
+            if machine_tag_set & set(tech.skills or []):
+                return tech
+        return on_shift[0]
+
+    # ── Off-shift fallback: pick the person arriving soonest ──
+    # Sort by hours until their shift starts
+    off_shift = sorted(available, key=lambda t: _hours_until_shift(t, now_hour))
     machine_tag_set = set(machine_tags or [])
-    for tech in candidates:
-        tech_skills = set(tech.skills or [])
-        if machine_tag_set & tech_skills:
+
+    # Prefer skill match among earliest arrivals (top 3)
+    earliest = off_shift[:3]
+    for tech in earliest:
+        if machine_tag_set & set(tech.skills or []):
+            logger.info(
+                "Off-shift allocation: %s (shift %02d:00-%02d:00, arrives in %.1fh) — skill match",
+                tech.name, tech.shift_start_hour, tech.shift_end_hour,
+                _hours_until_shift(tech, now_hour),
+            )
             return tech
 
-    return candidates[0]
+    # No skill match — just pick the earliest arrival
+    tech = off_shift[0]
+    logger.info(
+        "Off-shift allocation: %s (shift %02d:00-%02d:00, arrives in %.1fh) — first to arrive",
+        tech.name, tech.shift_start_hour, tech.shift_end_hour,
+        _hours_until_shift(tech, now_hour),
+    )
+    return tech
 
 
 def _is_on_shift(tech: Technician, now_hour: int) -> bool:
@@ -101,6 +125,15 @@ def _is_on_shift(tech: Technician, now_hour: int) -> bool:
         return s <= now_hour < e
     # Overnight shift e.g. 22-06
     return now_hour >= s or now_hour < e
+
+
+def _hours_until_shift(tech: Technician, now_hour: int) -> float:
+    """How many hours until this technician's shift starts."""
+    s = tech.shift_start_hour
+    if now_hour <= s:
+        return float(s - now_hour)
+    # Shift starts tomorrow (or later today wrapped)
+    return float(24 - now_hour + s)
 
 
 # ── Auto-assign technician ──────────────────────────────────────────────────
@@ -453,10 +486,38 @@ async def _process_machine(db: AsyncSession, machine: Machine, now: datetime) ->
             # Send email/Slack notification
             await notify_technician_assigned(tech_payload)
 
-    # ── Check notification milestones (with alert-fatigue gate) ──
+    # ── Check notification milestones (with alert-fatigue gate + two-step verification) ──
     for milestone_hours, flag_field in NOTIFICATION_MILESTONES:
         if hours_remaining <= milestone_hours and not getattr(pred, flag_field):
             setattr(pred, flag_field, True)
+
+            # Two-step verification: if ML models are ready, require multi-algorithm
+            # agreement before raising a high-severity alert
+            if ml_service.is_ready and milestone_hours <= 24:
+                # Grab latest live sensor values for verification
+                from app.models.sensor import SensorReading
+                latest_q = await db.execute(
+                    select(SensorReading)
+                    .where(SensorReading.machine_id == machine.id)
+                    .order_by(SensorReading.timestamp.desc())
+                    .limit(10)
+                )
+                readings = latest_q.scalars().all()
+                vals = {}
+                for r in readings:
+                    if r.type not in vals:
+                        vals[r.type] = r.value
+                if "vibration" in vals and "temperature" in vals and "current" in vals:
+                    ml_result = ml_service.predict_failure_probability(
+                        vals["vibration"], vals["temperature"], vals["current"]
+                    )
+                    if not ml_result.get("verified", True):
+                        logger.info(
+                            "TWO-STEP VERIFICATION REJECTED alert for %s at milestone %dh "
+                            "(algorithm scores=%s)",
+                            machine.id, milestone_hours, ml_result.get("algorithm_scores"),
+                        )
+                        continue
 
             # Alert fatigue: skip if we already alerted this severity recently
             severity_bucket = "critical" if hours_remaining <= 24 else "high"

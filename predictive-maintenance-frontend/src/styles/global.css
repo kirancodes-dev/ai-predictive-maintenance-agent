@@ -189,3 +189,19 @@ button:active { transform: scale(0.97); }
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+
+/* ── Alert Escalation Tiers ── */
+@keyframes alert-flash-amber {
+  0%, 100% { border-color: #f59e0b; box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+  50%       { border-color: #fbbf24; box-shadow: 0 0 8px rgba(245,158,11,0.25); }
+}
+
+@keyframes alert-glow-orange {
+  0%, 100% { border-color: #f97316; box-shadow: 0 0 6px rgba(249,115,22,0.3); }
+  50%       { border-color: #fb923c; box-shadow: 0 0 16px rgba(249,115,22,0.5); }
+}
+
+@keyframes alert-pulse-red {
+  0%, 100% { border-color: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.35); }
+  50%       { border-color: #f87171; box-shadow: 0 0 22px rgba(239,68,68,0.6); }
+}

@@ -1,24 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { apiClient } from '../../services/api/apiClient';
+import toast from 'react-hot-toast';
+
+interface SensorThreshold {
+  id: string;
+  sensorType: string;
+  name: string;
+  unit: string;
+  minThreshold: number;
+  maxThreshold: number;
+  criticalMin: number;
+  criticalMax: number;
+}
+
+interface MachineOption { id: string; name: string; }
+
+const MACHINES: MachineOption[] = [
+  { id: 'CNC_01', name: 'CNC Mill 01' },
+  { id: 'CNC_02', name: 'CNC Lathe 02' },
+  { id: 'PUMP_03', name: 'Industrial Pump 03' },
+  { id: 'CONVEYOR_04', name: 'Conveyor Belt 04' },
+];
 
 const SettingsPage: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'alerts' | 'system'>('profile');
 
-  // Alert threshold state (local only — no backend persistence yet)
-  const [thresholds, setThresholds] = useState({
-    temperatureWarning: 85,
-    temperatureCritical: 95,
-    vibrationWarning: 4.0,
-    vibrationCritical: 5.5,
-    riskScoreAlert: 60,
-  });
+  // Per-machine threshold state
+  const [selectedMachine, setSelectedMachine] = useState(MACHINES[0].id);
+  const [thresholds, setThresholds] = useState<SensorThreshold[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [saved, setSaved] = useState(false);
+  const fetchThresholds = useCallback(async (machineId: string) => {
+    setLoading(true);
+    try {
+      const res = await apiClient.get(`/machines/${machineId}/thresholds`);
+      setThresholds(res.data.data ?? []);
+    } catch {
+      toast.error('Failed to load thresholds');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleSaveThresholds = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  useEffect(() => {
+    if (activeTab === 'alerts') fetchThresholds(selectedMachine);
+  }, [activeTab, selectedMachine, fetchThresholds]);
+
+  const handleThresholdChange = (idx: number, field: keyof SensorThreshold, value: number) => {
+    setThresholds(prev => prev.map((t, i) => i === idx ? { ...t, [field]: value } : t));
+  };
+
+  const handleSaveThresholds = async () => {
+    setSaving(true);
+    try {
+      await apiClient.put(`/machines/${selectedMachine}/thresholds`, thresholds.map(t => ({
+        sensorType: t.sensorType,
+        minThreshold: t.minThreshold,
+        maxThreshold: t.maxThreshold,
+        criticalMin: t.criticalMin,
+        criticalMax: t.criticalMax,
+      })));
+      toast.success('Thresholds saved');
+    } catch {
+      toast.error('Failed to save thresholds');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const tabStyle = (active: boolean) => ({
@@ -82,61 +132,73 @@ const SettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Alerts Tab */}
+      {/* Alerts Tab — Per-Machine Thresholds */}
       {activeTab === 'alerts' && (
         <div style={{ background: '#fff', borderRadius: 8, padding: '1.5rem', border: '1px solid #e2e8f0' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Alert Thresholds</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div>
-              <label style={labelStyle}>Temperature Warning (°C)</label>
-              <input
-                type="number" style={inputStyle}
-                value={thresholds.temperatureWarning}
-                onChange={e => setThresholds(t => ({ ...t, temperatureWarning: +e.target.value }))}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Temperature Critical (°C)</label>
-              <input
-                type="number" style={inputStyle}
-                value={thresholds.temperatureCritical}
-                onChange={e => setThresholds(t => ({ ...t, temperatureCritical: +e.target.value }))}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Vibration Warning (mm/s)</label>
-              <input
-                type="number" step="0.1" style={inputStyle}
-                value={thresholds.vibrationWarning}
-                onChange={e => setThresholds(t => ({ ...t, vibrationWarning: +e.target.value }))}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Vibration Critical (mm/s)</label>
-              <input
-                type="number" step="0.1" style={inputStyle}
-                value={thresholds.vibrationCritical}
-                onChange={e => setThresholds(t => ({ ...t, vibrationCritical: +e.target.value }))}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Risk Score Alert Threshold (%)</label>
-              <input
-                type="number" style={inputStyle}
-                value={thresholds.riskScoreAlert}
-                onChange={e => setThresholds(t => ({ ...t, riskScoreAlert: +e.target.value }))}
-              />
-            </div>
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Per-Machine Alert Thresholds</h3>
+
+          {/* Machine selector */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={labelStyle}>Select Machine</label>
+            <select
+              style={{ ...inputStyle, cursor: 'pointer' }}
+              value={selectedMachine}
+              onChange={e => setSelectedMachine(e.target.value)}
+            >
+              {MACHINES.map(m => (
+                <option key={m.id} value={m.id}>{m.name} ({m.id})</option>
+              ))}
+            </select>
           </div>
+
+          {loading ? (
+            <p style={{ color: '#94a3b8', fontSize: 13 }}>Loading thresholds...</p>
+          ) : thresholds.length === 0 ? (
+            <p style={{ color: '#94a3b8', fontSize: 13 }}>No sensors configured for this machine.</p>
+          ) : (
+            <>
+              {thresholds.map((t, idx) => (
+                <div key={t.id} style={{ marginBottom: '1.25rem', padding: '1rem', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: 8 }}>
+                    {t.name} <span style={{ fontWeight: 400, color: '#94a3b8' }}>({t.unit})</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.75rem' }}>
+                    <div>
+                      <label style={labelStyle}>Warning Min</label>
+                      <input type="number" step="0.1" style={inputStyle} value={t.minThreshold}
+                        onChange={e => handleThresholdChange(idx, 'minThreshold', +e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Warning Max</label>
+                      <input type="number" step="0.1" style={inputStyle} value={t.maxThreshold}
+                        onChange={e => handleThresholdChange(idx, 'maxThreshold', +e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Critical Min</label>
+                      <input type="number" step="0.1" style={inputStyle} value={t.criticalMin}
+                        onChange={e => handleThresholdChange(idx, 'criticalMin', +e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Critical Max</label>
+                      <input type="number" step="0.1" style={inputStyle} value={t.criticalMax}
+                        onChange={e => handleThresholdChange(idx, 'criticalMax', +e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
           <button
             onClick={handleSaveThresholds}
+            disabled={saving || loading || thresholds.length === 0}
             style={{
-              marginTop: '1rem', padding: '0.5rem 1.5rem',
-              background: '#3b82f6', color: '#fff', border: 'none',
-              borderRadius: 6, cursor: 'pointer', fontWeight: 600,
+              marginTop: '0.5rem', padding: '0.5rem 1.5rem',
+              background: saving ? '#94a3b8' : '#3b82f6', color: '#fff', border: 'none',
+              borderRadius: 6, cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 600,
             }}
           >
-            {saved ? '✓ Saved' : 'Save Thresholds'}
+            {saving ? 'Saving...' : 'Save Thresholds'}
           </button>
         </div>
       )}

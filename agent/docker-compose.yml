@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  # ── Factory simulation server ──────────────────────────────────────────────
+  simulation-server:
+    build:
+      context: ../simulation-server
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── IPMA Agent ─────────────────────────────────────────────────────────────
+  ipma-agent:
+    build:
+      context: .
+    depends_on:
+      simulation-server:
+        condition: service_healthy
+    environment:
+      SIM_BASE_URL: "http://simulation-server:3000"
+      WEBHOOK_URL: "https://hooks.example.com/ipma"
+      ALERT_COOLDOWN_SECONDS: "300"
+      LOG_LEVEL: "INFO"
+    restart: on-failure
