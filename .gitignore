@@ -214,7 +214,7 @@ dist/
 .vite/
 
 # SQLite DB files
-*.db
+#*.db
 
 # OS
 .DS_Store
